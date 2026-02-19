@@ -6,6 +6,7 @@ import com.travelexpenses.model.*
 import com.travelexpenses.repository.SqlDelightCategoryRepository
 import com.travelexpenses.repository.SqlDelightExpenseRepository
 import com.travelexpenses.repository.SqlDelightTripRepository
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlin.test.BeforeTest
@@ -128,6 +129,22 @@ class MaterializedStateQueryTest {
     }
 
     @Test
+    fun getExpense_populatesTagsAndReceiptImageIds() = runTest(testDispatcher) {
+        engine.apply(TestHelpers.makeTagCreatedEvent(tag = TestHelpers.makeTag(id = "tag-x", label = "x")))
+        engine.apply(TestHelpers.makeTagCreatedEvent(tag = TestHelpers.makeTag(id = "tag-y", label = "y")))
+        engine.apply(TestHelpers.makeExpenseCreatedEvent(
+            expense = TestHelpers.makeExpense(id = "exp-1").copy(tags = listOf("tag-x", "tag-y"))
+        ))
+        engine.apply(TestHelpers.makeReceiptAttachedEvent(expenseId = "exp-1", imageId = "img-1"))
+        engine.apply(TestHelpers.makeReceiptAttachedEvent(expenseId = "exp-1", imageId = "img-2"))
+
+        val expense = expenseRepo.getExpense("exp-1")
+        assertNotNull(expense)
+        assertEquals(setOf("tag-x", "tag-y"), expense.tags.toSet())
+        assertEquals(setOf("img-1", "img-2"), expense.receiptImageIds.toSet())
+    }
+
+    @Test
     fun getExpense_returnsNullForNonExistent() = runTest(testDispatcher) {
         val expense = expenseRepo.getExpense("non-existent")
         assertNull(expense)
@@ -143,5 +160,40 @@ class MaterializedStateQueryTest {
         assertNotNull(trip)
         assertEquals("Tokyo Trip", trip.name)
         assertEquals("JPY", trip.baseCurrency)
+    }
+
+    // -- Flow observation tests --
+
+    @Test
+    fun observeActiveTrips_emitsCurrentState() = runTest(testDispatcher) {
+        engine.apply(TestHelpers.makeTripCreatedEvent(trip = TestHelpers.makeTrip(id = "trip-1", name = "Trip A")))
+        engine.apply(TestHelpers.makeTripCreatedEvent(trip = TestHelpers.makeTrip(id = "trip-2", name = "Trip B")))
+
+        val trips = tripRepo.observeActiveTrips().first()
+        assertEquals(2, trips.size)
+    }
+
+    @Test
+    fun observeExpensesForTrip_emitsCurrentState() = runTest(testDispatcher) {
+        engine.apply(TestHelpers.makeExpenseCreatedEvent(
+            expense = TestHelpers.makeExpense(id = "exp-1", tripId = "trip-1")
+        ))
+        engine.apply(TestHelpers.makeExpenseCreatedEvent(
+            expense = TestHelpers.makeExpense(id = "exp-2", tripId = "trip-1")
+        ))
+
+        val expenses = expenseRepo.observeExpensesForTrip("trip-1").first()
+        assertEquals(2, expenses.size)
+    }
+
+    @Test
+    fun observeAllCategories_emitsCurrentState() = runTest(testDispatcher) {
+        engine.apply(TestHelpers.makeCategoryCreatedEvent(
+            category = TestHelpers.makeCategory(id = "cat-1", name = "Food", icon = "fork")
+        ))
+
+        val categories = categoryRepo.observeAllCategories().first()
+        assertEquals(1, categories.size)
+        assertEquals("Food", categories[0].name)
     }
 }

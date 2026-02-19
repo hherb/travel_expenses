@@ -56,6 +56,9 @@ class SqlDelightExpenseRepository(
     }
 
     private fun com.travelexpenses.db.Expense.toExpense(): Expense {
+        val q = db.materializedStateQueries
+        val tagIds = q.selectTagIdsForExpense(id).executeAsList()
+        val receiptIds = q.selectReceiptImageIdsForExpense(id).executeAsList()
         return Expense(
             id = id,
             tripId = trip_id,
@@ -65,6 +68,8 @@ class SqlDelightExpenseRepository(
             vendor = vendor,
             date = LocalDate.parse(date),
             notes = notes,
+            tags = tagIds,
+            receiptImageIds = receiptIds,
             ocrConfidence = ocr_confidence?.toFloat(),
             taxAmount = tax_amount,
             createdAt = Instant.parse(created_at),

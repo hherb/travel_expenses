@@ -107,7 +107,7 @@ class IntegrationTest {
         // 5. Archive trip
         repo.append(TestHelpers.makeTripArchivedEvent(tripId = "trip-1"))
 
-        val activeTrips = db.materializedStateQueries.selectAllTrips().executeAsList()
+        val activeTrips = db.materializedStateQueries.selectActiveTrips().executeAsList()
         assertEquals(0, activeTrips.size, "No active trips after archival")
 
         // 6. All events should be preserved in event log

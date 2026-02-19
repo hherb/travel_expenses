@@ -204,6 +204,44 @@ class EventReplayEngineTest {
         assertEquals("utensils", row.icon, "Icon should be updated")
     }
 
+    @Test
+    fun replayExpenseUpdated_emptyStringClearsNullableFields() = runTest(testDispatcher) {
+        val expense = TestHelpers.makeExpense(
+            id = "exp-1",
+            vendor = "Some Vendor",
+        ).copy(notes = "Some notes", taxAmount = "5.00")
+        engine.apply(TestHelpers.makeExpenseCreatedEvent(expense = expense))
+
+        // Empty string should clear nullable fields to null
+        engine.apply(TestHelpers.makeExpenseUpdatedEvent(
+            expenseId = "exp-1",
+            vendor = "",
+            notes = "",
+            taxAmount = "",
+        ))
+
+        val row = db.materializedStateQueries.selectExpenseById("exp-1").executeAsOneOrNull()
+        assertNotNull(row)
+        assertNull(row.vendor, "Empty string vendor should be cleared to null")
+        assertNull(row.notes, "Empty string notes should be cleared to null")
+        assertNull(row.tax_amount, "Empty string taxAmount should be cleared to null")
+    }
+
+    @Test
+    fun replayTripUpdated_emptyStringClearsDestination() = runTest(testDispatcher) {
+        val trip = TestHelpers.makeTrip(id = "trip-1").copy(destination = "Tokyo")
+        engine.apply(TestHelpers.makeTripCreatedEvent(trip = trip))
+
+        engine.apply(TestHelpers.makeTripUpdatedEvent(
+            tripId = "trip-1",
+            destination = "",
+        ))
+
+        val row = db.materializedStateQueries.selectTripById("trip-1").executeAsOneOrNull()
+        assertNotNull(row)
+        assertNull(row.destination, "Empty string destination should be cleared to null")
+    }
+
     // -- Delete/archive --
 
     @Test
@@ -225,7 +263,7 @@ class EventReplayEngineTest {
 
         engine.apply(TestHelpers.makeTripArchivedEvent(tripId = "trip-1"))
 
-        val activeTrips = db.materializedStateQueries.selectAllTrips().executeAsList()
+        val activeTrips = db.materializedStateQueries.selectActiveTrips().executeAsList()
         assertEquals(0, activeTrips.size, "Archived trip should not appear in active trips")
 
         val archivedTrips = db.materializedStateQueries.selectArchivedTrips().executeAsList()
@@ -236,12 +274,23 @@ class EventReplayEngineTest {
 
     @Test
     fun replayReceiptAttached_createsReceiptImageRow() = runTest(testDispatcher) {
-        engine.apply(TestHelpers.makeReceiptAttachedEvent(expenseId = "exp-1", imageId = "img-1"))
+        engine.apply(TestHelpers.makeReceiptAttachedEvent(
+            expenseId = "exp-1",
+            imageId = "img-1",
+            filePath = "/photos/receipt.jpg",
+            thumbnailPath = "/photos/thumb.jpg",
+            width = 800,
+            height = 600,
+        ))
 
         val receipts = db.materializedStateQueries.selectReceiptsForExpense("exp-1").executeAsList()
         assertEquals(1, receipts.size)
         assertEquals("img-1", receipts[0].id)
         assertEquals("exp-1", receipts[0].expense_id)
+        assertEquals("/photos/receipt.jpg", receipts[0].file_path)
+        assertEquals("/photos/thumb.jpg", receipts[0].thumbnail_path)
+        assertEquals(800L, receipts[0].width)
+        assertEquals(600L, receipts[0].height)
     }
 
     @Test
@@ -339,7 +388,7 @@ class EventReplayEngineTest {
         // Rebuild with empty list
         engine.rebuildAll(emptyList())
 
-        val trips = db.materializedStateQueries.selectAllTrips().executeAsList()
+        val trips = db.materializedStateQueries.selectActiveTrips().executeAsList()
         val expenses = db.materializedStateQueries.selectAllActiveExpenses().executeAsList()
         assertEquals(0, trips.size)
         assertEquals(0, expenses.size)

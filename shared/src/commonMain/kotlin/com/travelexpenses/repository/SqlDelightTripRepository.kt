@@ -22,7 +22,7 @@ class SqlDelightTripRepository(
     }
 
     override suspend fun getActiveTrips(): List<Trip> = withContext(queryContext) {
-        db.materializedStateQueries.selectAllTrips().executeAsList().map { it.toTrip() }
+        db.materializedStateQueries.selectActiveTrips().executeAsList().map { it.toTrip() }
     }
 
     override suspend fun getArchivedTrips(): List<Trip> = withContext(queryContext) {
@@ -30,7 +30,7 @@ class SqlDelightTripRepository(
     }
 
     override fun observeActiveTrips(): Flow<List<Trip>> {
-        return db.materializedStateQueries.selectAllTrips()
+        return db.materializedStateQueries.selectActiveTrips()
             .asFlow()
             .mapToList(queryContext)
             .map { rows -> rows.map { it.toTrip() } }

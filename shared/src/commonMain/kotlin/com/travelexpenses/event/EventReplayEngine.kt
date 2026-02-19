@@ -1,6 +1,8 @@
 package com.travelexpenses.event
 
 import com.travelexpenses.db.TravelExpensesDb
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.CoroutineContext
 
@@ -16,11 +18,19 @@ class EventReplayEngine(
     private val queryContext: CoroutineContext,
 ) {
 
+    private val mutex = Mutex()
+
     /**
      * Apply a single event to the materialized state tables.
+     * Wraps the operation in a transaction for atomicity (e.g. per-field updates)
+     * and a mutex for thread safety.
      */
     suspend fun apply(event: ExpenseEvent) = withContext(queryContext) {
-        applyWithinTransaction(event)
+        mutex.withLock {
+            db.transaction {
+                applyWithinTransaction(event)
+            }
+        }
     }
 
     /**
@@ -29,9 +39,11 @@ class EventReplayEngine(
      * Runs within a single transaction for atomicity.
      */
     suspend fun rebuildAll(events: List<ExpenseEvent>) = withContext(queryContext) {
-        db.transaction {
-            clearAll()
-            events.forEach { applyWithinTransaction(it) }
+        mutex.withLock {
+            db.transaction {
+                clearAll()
+                events.forEach { applyWithinTransaction(it) }
+            }
         }
     }
 
@@ -96,10 +108,11 @@ class EventReplayEngine(
         event.amount?.let { q.updateExpenseAmount(it, ts, event.expenseId) }
         event.currency?.let { q.updateExpenseCurrency(it, ts, event.expenseId) }
         event.categoryId?.let { q.updateExpenseCategoryId(it, ts, event.expenseId) }
-        event.vendor?.let { q.updateExpenseVendor(it, ts, event.expenseId) }
+        // For nullable fields: "" means "clear to null", non-empty means "set value"
+        event.vendor?.let { q.updateExpenseVendor(it.ifEmpty { null }, ts, event.expenseId) }
         event.date?.let { q.updateExpenseDate(it.toString(), ts, event.expenseId) }
-        event.notes?.let { q.updateExpenseNotes(it, ts, event.expenseId) }
-        event.taxAmount?.let { q.updateExpenseTaxAmount(it, ts, event.expenseId) }
+        event.notes?.let { q.updateExpenseNotes(it.ifEmpty { null }, ts, event.expenseId) }
+        event.taxAmount?.let { q.updateExpenseTaxAmount(it.ifEmpty { null }, ts, event.expenseId) }
         event.ocrConfidence?.let { q.updateExpenseOcrConfidence(it.toDouble(), ts, event.expenseId) }
         event.tags?.let { newTags ->
             q.deleteExpenseTagsForExpense(event.expenseId)
@@ -130,7 +143,8 @@ class EventReplayEngine(
     private fun applyTripUpdated(event: ExpenseEvent.TripUpdated) {
         val q = db.materializedStateQueries
         event.name?.let { q.updateTripName(it, event.tripId) }
-        event.destination?.let { q.updateTripDestination(it, event.tripId) }
+        // destination is nullable on Trip: "" means "clear to null"
+        event.destination?.let { q.updateTripDestination(it.ifEmpty { null }, event.tripId) }
         event.startDate?.let { q.updateTripStartDate(it.toString(), event.tripId) }
         event.endDate?.let { q.updateTripEndDate(it.toString(), event.tripId) }
         event.baseCurrency?.let { q.updateTripBaseCurrency(it, event.tripId) }
@@ -167,10 +181,10 @@ class EventReplayEngine(
         db.materializedStateQueries.insertReceiptImage(
             id = event.imageId,
             expense_id = event.expenseId,
-            file_path = "",
-            thumbnail_path = null,
-            width = null,
-            height = null,
+            file_path = event.filePath,
+            thumbnail_path = event.thumbnailPath,
+            width = event.width?.toLong(),
+            height = event.height?.toLong(),
             created_at = event.timestamp.toString(),
         )
     }

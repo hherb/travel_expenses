@@ -138,6 +138,10 @@ sealed class ExpenseEvent {
         override val deviceId: DeviceId,
         val expenseId: ExpenseId,
         val imageId: ImageId,
+        val filePath: String,
+        val thumbnailPath: String? = null,
+        val width: Int? = null,
+        val height: Int? = null,
     ) : ExpenseEvent()
 
     @Serializable

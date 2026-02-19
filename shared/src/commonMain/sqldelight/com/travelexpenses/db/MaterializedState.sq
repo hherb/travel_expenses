@@ -26,10 +26,10 @@ CREATE TABLE tag (
 
 CREATE TABLE expense (
     id TEXT NOT NULL PRIMARY KEY,
-    trip_id TEXT NOT NULL,
+    trip_id TEXT NOT NULL REFERENCES trip(id),
     amount TEXT NOT NULL,
     currency TEXT NOT NULL,
-    category_id TEXT NOT NULL,
+    category_id TEXT NOT NULL REFERENCES category(id),
     vendor TEXT,
     date TEXT NOT NULL,
     notes TEXT,
@@ -41,14 +41,14 @@ CREATE TABLE expense (
 );
 
 CREATE TABLE expense_tag (
-    expense_id TEXT NOT NULL,
-    tag_id TEXT NOT NULL,
+    expense_id TEXT NOT NULL REFERENCES expense(id),
+    tag_id TEXT NOT NULL REFERENCES tag(id),
     PRIMARY KEY (expense_id, tag_id)
 );
 
 CREATE TABLE receipt_image (
     id TEXT NOT NULL PRIMARY KEY,
-    expense_id TEXT NOT NULL,
+    expense_id TEXT NOT NULL REFERENCES expense(id),
     file_path TEXT NOT NULL,
     thumbnail_path TEXT,
     width INTEGER,
@@ -79,9 +79,10 @@ UPDATE trip SET end_date = ? WHERE id = ?;
 updateTripBaseCurrency:
 UPDATE trip SET base_currency = ? WHERE id = ?;
 
-selectAllTrips:
+selectActiveTrips:
 SELECT * FROM trip WHERE is_archived = 0 ORDER BY created_at DESC;
 
+-- Returns trip regardless of archive status (used by getTrip for detail views).
 selectTripById:
 SELECT * FROM trip WHERE id = ?;
 
@@ -167,6 +168,12 @@ SELECT tag.* FROM tag INNER JOIN expense_tag ON tag.id = expense_tag.tag_id WHER
 
 selectExpensesForTag:
 SELECT expense.* FROM expense INNER JOIN expense_tag ON expense.id = expense_tag.expense_id WHERE expense_tag.tag_id = ? AND expense.is_deleted = 0;
+
+selectTagIdsForExpense:
+SELECT tag_id FROM expense_tag WHERE expense_id = ?;
+
+selectReceiptImageIdsForExpense:
+SELECT id FROM receipt_image WHERE expense_id = ?;
 
 -- Receipt image queries
 insertReceiptImage:

@@ -142,13 +142,24 @@ class EventSerializationTest {
 
     @Test
     fun receiptAttachedEvent_roundTrips() {
-        val event = TestHelpers.makeReceiptAttachedEvent(expenseId = "exp-5", imageId = "img-10")
+        val event = TestHelpers.makeReceiptAttachedEvent(
+            expenseId = "exp-5",
+            imageId = "img-10",
+            filePath = "/receipts/photo.jpg",
+            thumbnailPath = "/receipts/thumb.jpg",
+            width = 1920,
+            height = 1080,
+        )
         val serialized = json.encodeToString(ExpenseEvent.serializer(), event)
         val deserialized = json.decodeFromString(ExpenseEvent.serializer(), serialized)
 
         assertIs<ExpenseEvent.ReceiptAttached>(deserialized)
         assertEquals("exp-5", deserialized.expenseId)
         assertEquals("img-10", deserialized.imageId)
+        assertEquals("/receipts/photo.jpg", deserialized.filePath)
+        assertEquals("/receipts/thumb.jpg", deserialized.thumbnailPath)
+        assertEquals(1920, deserialized.width)
+        assertEquals(1080, deserialized.height)
     }
 
     @Test

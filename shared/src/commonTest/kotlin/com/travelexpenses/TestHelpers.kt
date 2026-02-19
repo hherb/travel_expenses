@@ -234,6 +234,10 @@ object TestHelpers {
     fun makeReceiptAttachedEvent(
         expenseId: String = "exp-1",
         imageId: String = "img-${Random.nextInt(100000)}",
+        filePath: String = "/receipts/$imageId.jpg",
+        thumbnailPath: String? = "/receipts/thumb_$imageId.jpg",
+        width: Int? = 1024,
+        height: Int? = 768,
         deviceId: String = "device-1",
         sequenceNumber: Long = nextSequence(),
     ): ExpenseEvent.ReceiptAttached {
@@ -244,6 +248,10 @@ object TestHelpers {
             deviceId = deviceId,
             expenseId = expenseId,
             imageId = imageId,
+            filePath = filePath,
+            thumbnailPath = thumbnailPath,
+            width = width,
+            height = height,
         )
     }
 
