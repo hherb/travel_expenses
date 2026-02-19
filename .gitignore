@@ -74,5 +74,8 @@ local.properties
 # Kotlin
 *.class
 
+# Local environment docs (machine-specific)
+LOCAL_BUILD_ENV.md
+
 # macOS
 .DS_Store

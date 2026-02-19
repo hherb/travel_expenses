@@ -6,6 +6,11 @@ plugins {
 }
 
 kotlin {
+    // Opt-in to experimental APIs used across the project
+    sourceSets.all {
+        languageSettings.optIn("kotlinx.coroutines.ExperimentalCoroutinesApi")
+    }
+
     // Android target
     androidTarget {
         compilerOptions {
