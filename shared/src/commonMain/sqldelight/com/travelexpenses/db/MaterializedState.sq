@@ -1,0 +1,198 @@
+-- Materialized state tables: rebuilt from event log replay.
+-- These are the read-side query tables for the UI.
+
+CREATE TABLE trip (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    destination TEXT,
+    start_date TEXT,
+    end_date TEXT,
+    base_currency TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    is_archived INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE category (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    icon TEXT NOT NULL,
+    is_default INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE tag (
+    id TEXT NOT NULL PRIMARY KEY,
+    label TEXT NOT NULL
+);
+
+CREATE TABLE expense (
+    id TEXT NOT NULL PRIMARY KEY,
+    trip_id TEXT NOT NULL,
+    amount TEXT NOT NULL,
+    currency TEXT NOT NULL,
+    category_id TEXT NOT NULL,
+    vendor TEXT,
+    date TEXT NOT NULL,
+    notes TEXT,
+    tax_amount TEXT,
+    ocr_confidence REAL,
+    created_at TEXT NOT NULL,
+    last_modified_at TEXT NOT NULL,
+    is_deleted INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE expense_tag (
+    expense_id TEXT NOT NULL,
+    tag_id TEXT NOT NULL,
+    PRIMARY KEY (expense_id, tag_id)
+);
+
+CREATE TABLE receipt_image (
+    id TEXT NOT NULL PRIMARY KEY,
+    expense_id TEXT NOT NULL,
+    file_path TEXT NOT NULL,
+    thumbnail_path TEXT,
+    width INTEGER,
+    height INTEGER,
+    created_at TEXT NOT NULL
+);
+
+-- Trip queries
+upsertTrip:
+INSERT OR REPLACE INTO trip (id, name, destination, start_date, end_date, base_currency, created_at, is_archived)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+archiveTrip:
+UPDATE trip SET is_archived = 1 WHERE id = ?;
+
+updateTripName:
+UPDATE trip SET name = ? WHERE id = ?;
+
+updateTripDestination:
+UPDATE trip SET destination = ? WHERE id = ?;
+
+updateTripStartDate:
+UPDATE trip SET start_date = ? WHERE id = ?;
+
+updateTripEndDate:
+UPDATE trip SET end_date = ? WHERE id = ?;
+
+updateTripBaseCurrency:
+UPDATE trip SET base_currency = ? WHERE id = ?;
+
+selectAllTrips:
+SELECT * FROM trip WHERE is_archived = 0 ORDER BY created_at DESC;
+
+selectTripById:
+SELECT * FROM trip WHERE id = ?;
+
+selectArchivedTrips:
+SELECT * FROM trip WHERE is_archived = 1 ORDER BY created_at DESC;
+
+-- Category queries
+upsertCategory:
+INSERT OR REPLACE INTO category (id, name, icon, is_default) VALUES (?, ?, ?, ?);
+
+updateCategoryName:
+UPDATE category SET name = ? WHERE id = ?;
+
+updateCategoryIcon:
+UPDATE category SET icon = ? WHERE id = ?;
+
+selectAllCategories:
+SELECT * FROM category ORDER BY name;
+
+selectCategoryById:
+SELECT * FROM category WHERE id = ?;
+
+-- Tag queries
+insertTag:
+INSERT OR IGNORE INTO tag (id, label) VALUES (?, ?);
+
+selectAllTags:
+SELECT * FROM tag ORDER BY label;
+
+selectTagById:
+SELECT * FROM tag WHERE id = ?;
+
+-- Expense queries
+upsertExpense:
+INSERT OR REPLACE INTO expense (id, trip_id, amount, currency, category_id, vendor, date, notes, tax_amount, ocr_confidence, created_at, last_modified_at, is_deleted)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+softDeleteExpense:
+UPDATE expense SET is_deleted = 1 WHERE id = ?;
+
+updateExpenseAmount:
+UPDATE expense SET amount = ?, last_modified_at = ? WHERE id = ?;
+
+updateExpenseCurrency:
+UPDATE expense SET currency = ?, last_modified_at = ? WHERE id = ?;
+
+updateExpenseCategoryId:
+UPDATE expense SET category_id = ?, last_modified_at = ? WHERE id = ?;
+
+updateExpenseVendor:
+UPDATE expense SET vendor = ?, last_modified_at = ? WHERE id = ?;
+
+updateExpenseDate:
+UPDATE expense SET date = ?, last_modified_at = ? WHERE id = ?;
+
+updateExpenseNotes:
+UPDATE expense SET notes = ?, last_modified_at = ? WHERE id = ?;
+
+updateExpenseTaxAmount:
+UPDATE expense SET tax_amount = ?, last_modified_at = ? WHERE id = ?;
+
+updateExpenseOcrConfidence:
+UPDATE expense SET ocr_confidence = ?, last_modified_at = ? WHERE id = ?;
+
+selectExpenseById:
+SELECT * FROM expense WHERE id = ? AND is_deleted = 0;
+
+selectExpensesForTrip:
+SELECT * FROM expense WHERE trip_id = ? AND is_deleted = 0 ORDER BY date DESC;
+
+selectAllActiveExpenses:
+SELECT * FROM expense WHERE is_deleted = 0 ORDER BY date DESC;
+
+-- Expense-tag junction queries
+insertExpenseTag:
+INSERT OR IGNORE INTO expense_tag (expense_id, tag_id) VALUES (?, ?);
+
+deleteExpenseTagsForExpense:
+DELETE FROM expense_tag WHERE expense_id = ?;
+
+selectTagsForExpense:
+SELECT tag.* FROM tag INNER JOIN expense_tag ON tag.id = expense_tag.tag_id WHERE expense_tag.expense_id = ?;
+
+selectExpensesForTag:
+SELECT expense.* FROM expense INNER JOIN expense_tag ON expense.id = expense_tag.expense_id WHERE expense_tag.tag_id = ? AND expense.is_deleted = 0;
+
+-- Receipt image queries
+insertReceiptImage:
+INSERT INTO receipt_image (id, expense_id, file_path, thumbnail_path, width, height, created_at) VALUES (?, ?, ?, ?, ?, ?, ?);
+
+deleteReceiptImage:
+DELETE FROM receipt_image WHERE id = ? AND expense_id = ?;
+
+selectReceiptsForExpense:
+SELECT * FROM receipt_image WHERE expense_id = ?;
+
+-- Clear all materialized state (for full rebuild)
+clearAllTrips:
+DELETE FROM trip;
+
+clearAllCategories:
+DELETE FROM category;
+
+clearAllTags:
+DELETE FROM tag;
+
+clearAllExpenses:
+DELETE FROM expense;
+
+clearAllExpenseTags:
+DELETE FROM expense_tag;
+
+clearAllReceiptImages:
+DELETE FROM receipt_image;

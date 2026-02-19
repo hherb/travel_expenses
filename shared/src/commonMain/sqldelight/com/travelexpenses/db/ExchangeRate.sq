@@ -1,0 +1,25 @@
+CREATE TABLE exchange_rate (
+    from_currency TEXT NOT NULL,
+    to_currency TEXT NOT NULL,
+    rate TEXT NOT NULL,
+    date TEXT NOT NULL,
+    source TEXT NOT NULL,
+    fetched_at TEXT NOT NULL,
+    PRIMARY KEY (from_currency, to_currency, date)
+);
+
+upsertRate:
+INSERT OR REPLACE INTO exchange_rate (from_currency, to_currency, rate, date, source, fetched_at)
+VALUES (?, ?, ?, ?, ?, ?);
+
+selectRate:
+SELECT * FROM exchange_rate WHERE from_currency = ? AND to_currency = ? AND date = ?;
+
+selectRatesForCurrencyPair:
+SELECT * FROM exchange_rate WHERE from_currency = ? AND to_currency = ? ORDER BY date DESC;
+
+selectLatestRate:
+SELECT * FROM exchange_rate WHERE from_currency = ? AND to_currency = ? ORDER BY date DESC LIMIT 1;
+
+deleteAll:
+DELETE FROM exchange_rate;

@@ -41,3 +41,28 @@ data class Trip(
     val baseCurrency: String,
     val createdAt: Instant,
 )
+
+@Serializable
+data class Category(
+    val id: CategoryId,
+    val name: String,
+    val icon: String,
+    val isDefault: Boolean = false,
+)
+
+@Serializable
+data class Tag(
+    val id: TagId,
+    val label: String,
+)
+
+@Serializable
+data class ReceiptImage(
+    val id: ImageId,
+    val expenseId: ExpenseId,
+    val filePath: String,
+    val thumbnailPath: String? = null,
+    val width: Int? = null,
+    val height: Int? = null,
+    val createdAt: Instant,
+)

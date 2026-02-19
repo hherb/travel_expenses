@@ -4,6 +4,7 @@ import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
 import app.cash.sqldelight.coroutines.mapToOne
 import com.travelexpenses.db.TravelExpensesDb
+import com.travelexpenses.event.EventReplayEngine
 import com.travelexpenses.event.ExpenseEvent
 import com.travelexpenses.model.DeviceId
 import kotlinx.coroutines.flow.Flow
@@ -30,6 +31,7 @@ import kotlin.coroutines.CoroutineContext
 class SqlDelightEventLogRepository(
     private val db: TravelExpensesDb,
     private val queryContext: CoroutineContext,
+    private val replayEngine: EventReplayEngine? = null,
     private val json: Json = Json { ignoreUnknownKeys = true },
 ) : EventLogRepository {
 
@@ -37,16 +39,19 @@ class SqlDelightEventLogRepository(
 
     override suspend fun append(event: ExpenseEvent) = withContext(queryContext) {
         mutex.withLock {
-            val eventType = eventTypeOf(event)
-            val payload = json.encodeToString(ExpenseEvent.serializer(), event)
-            db.eventLogQueries.insert(
-                event_id = event.eventId,
-                sequence_number = event.sequenceNumber,
-                device_id = event.deviceId,
-                timestamp = event.timestamp.toString(),
-                event_type = eventType,
-                payload = payload,
-            )
+            db.transaction {
+                val eventType = eventTypeOf(event)
+                val payload = json.encodeToString(ExpenseEvent.serializer(), event)
+                db.eventLogQueries.insert(
+                    event_id = event.eventId,
+                    sequence_number = event.sequenceNumber,
+                    device_id = event.deviceId,
+                    timestamp = event.timestamp.toString(),
+                    event_type = eventType,
+                    payload = payload,
+                )
+                replayEngine?.applyWithinTransaction(event)
+            }
         }
     }
 
@@ -92,7 +97,14 @@ class SqlDelightEventLogRepository(
 /** Maps an [ExpenseEvent] subtype to its serialization discriminator string. */
 private fun eventTypeOf(event: ExpenseEvent): String = when (event) {
     is ExpenseEvent.ExpenseCreated -> "expense_created"
+    is ExpenseEvent.ExpenseUpdated -> "expense_updated"
     is ExpenseEvent.ExpenseDeleted -> "expense_deleted"
     is ExpenseEvent.TripCreated -> "trip_created"
+    is ExpenseEvent.TripUpdated -> "trip_updated"
     is ExpenseEvent.TripArchived -> "trip_archived"
+    is ExpenseEvent.CategoryCreated -> "category_created"
+    is ExpenseEvent.CategoryUpdated -> "category_updated"
+    is ExpenseEvent.TagCreated -> "tag_created"
+    is ExpenseEvent.ReceiptAttached -> "receipt_attached"
+    is ExpenseEvent.ReceiptDetached -> "receipt_detached"
 }
