@@ -2,14 +2,15 @@ package com.travelexpenses
 
 import com.travelexpenses.db.TravelExpensesDb
 import com.travelexpenses.repository.SqlDelightEventLogRepository
-import com.travelexpenses.repository.createInMemoryDriver
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 /**
  * Test 3: Concurrent coroutine writes.
@@ -25,7 +26,8 @@ class ConcurrentWriteTest {
 
     private val driver = createInMemoryDriver()
     private val db = TravelExpensesDb(driver)
-    private val repo = SqlDelightEventLogRepository(db)
+    private val testDispatcher = UnconfinedTestDispatcher()
+    private val repo = SqlDelightEventLogRepository(db, queryContext = testDispatcher)
 
     @BeforeTest
     fun setup() {
@@ -132,12 +134,12 @@ class ConcurrentWriteTest {
         // Reads should return consistent snapshots (each result is a valid state)
         readResults.forEach { events ->
             // Each read sees at least the pre-populated 10 events
-            assert(events.size >= 10) { "Expected at least 10 events, got ${events.size}" }
+            assertTrue(events.size >= 10, "Expected at least 10 events, got ${events.size}")
         }
 
         // Counts should be consistent
         countResults.forEach { count ->
-            assert(count >= 10) { "Expected count >= 10, got $count" }
+            assertTrue(count >= 10, "Expected count >= 10, got $count")
         }
     }
 }

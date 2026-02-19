@@ -2,19 +2,17 @@ package com.travelexpenses
 
 import com.travelexpenses.db.TravelExpensesDb
 import com.travelexpenses.repository.SqlDelightEventLogRepository
-import com.travelexpenses.repository.createInMemoryDriver
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 /**
@@ -33,7 +31,8 @@ class CoroutineCancellationTest {
 
     private val driver = createInMemoryDriver()
     private val db = TravelExpensesDb(driver)
-    private val repo = SqlDelightEventLogRepository(db)
+    private val testDispatcher = UnconfinedTestDispatcher()
+    private val repo = SqlDelightEventLogRepository(db, queryContext = testDispatcher)
 
     @BeforeTest
     fun setup() {
@@ -58,15 +57,15 @@ class CoroutineCancellationTest {
             }
         }
 
-        testScheduler.advanceUntilIdle()
+        advanceUntilIdle()
 
         repo.append(TestHelpers.makeExpenseCreatedEvent(sequenceNumber = 1))
-        testScheduler.advanceUntilIdle()
+        advanceUntilIdle()
 
         // Add more events -- the collector should not see these
         repo.append(TestHelpers.makeExpenseCreatedEvent(sequenceNumber = 2))
         repo.append(TestHelpers.makeExpenseCreatedEvent(sequenceNumber = 3))
-        testScheduler.advanceUntilIdle()
+        advanceUntilIdle()
 
         job.join()
 
@@ -82,9 +81,9 @@ class CoroutineCancellationTest {
         val job = launch {
             repo.observeEventCount().collect { /* just collecting */ }
         }
-        testScheduler.advanceUntilIdle()
+        advanceUntilIdle()
         job.cancel()
-        testScheduler.advanceUntilIdle()
+        advanceUntilIdle()
 
         // Repository should still work fine
         repo.append(TestHelpers.makeExpenseCreatedEvent(sequenceNumber = 1))
@@ -97,8 +96,6 @@ class CoroutineCancellationTest {
 
     @Test
     fun cancelledChildDoesNotAffectSiblings() = runTest {
-        val results = mutableListOf<Long>()
-
         val job1 = async {
             repo.observeEventCount().first() // Will complete normally
         }
@@ -110,13 +107,13 @@ class CoroutineCancellationTest {
             }
         }
 
-        testScheduler.advanceUntilIdle()
+        advanceUntilIdle()
 
         val initialCount = job1.await()
         assertEquals(0L, initialCount)
 
         job2.cancel()
-        testScheduler.advanceUntilIdle()
+        advanceUntilIdle()
 
         // Repository still works
         repo.append(TestHelpers.makeExpenseCreatedEvent(sequenceNumber = 1))

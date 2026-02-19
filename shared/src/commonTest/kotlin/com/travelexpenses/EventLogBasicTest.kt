@@ -3,7 +3,7 @@ package com.travelexpenses
 import com.travelexpenses.db.TravelExpensesDb
 import com.travelexpenses.event.ExpenseEvent
 import com.travelexpenses.repository.SqlDelightEventLogRepository
-import com.travelexpenses.repository.createInMemoryDriver
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -24,7 +24,8 @@ class EventLogBasicTest {
 
     private val driver = createInMemoryDriver()
     private val db = TravelExpensesDb(driver)
-    private val repo = SqlDelightEventLogRepository(db)
+    private val testDispatcher = UnconfinedTestDispatcher()
+    private val repo = SqlDelightEventLogRepository(db, queryContext = testDispatcher)
 
     @BeforeTest
     fun setup() {

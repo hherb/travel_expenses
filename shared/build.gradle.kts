@@ -2,15 +2,14 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.sqldelight)
+    alias(libs.plugins.agp.library)
 }
 
 kotlin {
     // Android target
     androidTarget {
-        compilations.all {
-            kotlinOptions {
-                jvmTarget = "17"
-            }
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
         }
     }
 
@@ -44,6 +43,12 @@ kotlin {
             implementation(libs.sqldelight.android.driver)
         }
 
+        val androidUnitTest by getting {
+            dependencies {
+                implementation(libs.sqldelight.sqlite.driver)
+            }
+        }
+
         iosMain.dependencies {
             implementation(libs.sqldelight.native.driver)
         }
@@ -58,7 +63,6 @@ sqldelight {
     }
 }
 
-// Android library config required for androidTarget
 android {
     namespace = "com.travelexpenses.shared"
     compileSdk = 35

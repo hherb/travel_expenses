@@ -4,12 +4,11 @@ import app.cash.sqldelight.db.SqlDriver
 import com.travelexpenses.db.TravelExpensesDb
 import com.travelexpenses.event.ExpenseEvent
 import com.travelexpenses.repository.SqlDelightEventLogRepository
-import com.travelexpenses.repository.createInMemoryDriver
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -33,13 +32,14 @@ class FlowObservationTest {
     private lateinit var driver: SqlDriver
     private lateinit var db: TravelExpensesDb
     private lateinit var repo: SqlDelightEventLogRepository
+    private val testDispatcher = UnconfinedTestDispatcher()
 
     @BeforeTest
     fun setup() {
         TestHelpers.resetSequence()
         driver = createInMemoryDriver()
         db = TravelExpensesDb(driver)
-        repo = SqlDelightEventLogRepository(db)
+        repo = SqlDelightEventLogRepository(db, queryContext = testDispatcher)
     }
 
     @AfterTest
