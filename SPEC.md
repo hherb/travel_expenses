@@ -495,9 +495,44 @@ JSON fixtures in `test-vectors/` validated by both platforms:
 
 ---
 
-## 9. Open Decisions (Resolve During Implementation)
+## 9. Implementation Strategy -- TDD Validation First
+
+Before building the full shared module, we validate the riskiest architectural assumption:
+**KMP coroutines + SQLDelight on iOS/Kotlin Native.**
+
+### Phase 0: Coroutine Validation (Go/No-Go Gate)
+
+Build a minimal KMP shared module with:
+
+1. **Event log repository** using SQLDelight + coroutines
+2. **Tests exercising:**
+   - Concurrent event writes from multiple coroutines
+   - SQLDelight query execution from background dispatchers
+   - `Flow` collection for reactive UI state updates
+   - Coroutine cancellation / structured concurrency behavior
+   - Calling suspend functions from Swift (via generated Obj-C interop)
+3. **Run on both platforms** -- Android emulator + iOS simulator
+
+**Pass criteria:**
+- All tests green on both platforms
+- No deadlocks, memory leaks, or threading crashes on iOS
+- SQLDelight query latency on iOS main thread < 16ms for typical reads
+- Flow updates arrive reliably on iOS UI thread
+
+**If validation fails:** pivot to pure native implementations (Room + coroutines on Android, Core Data + Swift concurrency on iOS) with a shared spec / test-vector contract instead of shared code.
+
+### Phase 1+: Build Out (After Phase 0 Passes)
+
+Proceed with full KMP shared module as specified in this document.
+
+---
+
+## 10. Resolved Decisions
+
+1. **Image compression format** -- **HEIF**. Smaller file size, native support on both platforms. Export to JPEG/PNG when sharing outside the app.
+2. **KMP coroutine threading model** -- validate via Phase 0 TDD before committing. See Section 9.
+
+## 11. Open Decisions (Resolve During Implementation)
 
 1. **Exchange rate API provider** -- evaluate frankfurter.app (free, no key) vs. exchangerate.host (free tier with key) vs. bundling a static fallback table
-2. **KMP coroutine threading model** -- Kotlin/Native memory model is now stable, but test actual performance of SQLDelight queries on iOS main thread
-3. **Image compression format** -- HEIF (smaller, native on both platforms) vs. JPEG (universal compatibility for export)
-4. **Accessibility audit** -- schedule after first UI milestone on each platform
+2. **Accessibility audit** -- schedule after first UI milestone on each platform
