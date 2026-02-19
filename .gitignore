@@ -60,3 +60,19 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
+
+# Gradle / KMP
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.properties
+local.properties
+
+# IDE
+.idea/
+*.iml
+
+# Kotlin
+*.class
+
+# macOS
+.DS_Store

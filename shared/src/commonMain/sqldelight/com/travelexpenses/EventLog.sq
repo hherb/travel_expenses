@@ -1,0 +1,28 @@
+CREATE TABLE event_log (
+    event_id TEXT NOT NULL PRIMARY KEY,
+    sequence_number INTEGER NOT NULL,
+    device_id TEXT NOT NULL,
+    timestamp TEXT NOT NULL,
+    event_type TEXT NOT NULL,
+    payload TEXT NOT NULL,
+    UNIQUE(device_id, sequence_number)
+);
+
+insert:
+INSERT INTO event_log (event_id, sequence_number, device_id, timestamp, event_type, payload)
+VALUES (?, ?, ?, ?, ?, ?);
+
+selectAll:
+SELECT * FROM event_log ORDER BY device_id, sequence_number;
+
+selectByDevice:
+SELECT * FROM event_log WHERE device_id = ? ORDER BY sequence_number;
+
+selectCount:
+SELECT COUNT(*) FROM event_log;
+
+maxSequenceForDevice:
+SELECT MAX(sequence_number) FROM event_log WHERE device_id = ?;
+
+deleteAll:
+DELETE FROM event_log;
