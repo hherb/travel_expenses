@@ -23,6 +23,7 @@ class TripViewModel(
     private val eventLogRepo: EventLogRepository,
     private val replayEngine: EventReplayEngine,
     private val currencyConverter: CurrencyConverter,
+    private val deviceId: String,
 ) : ViewModel() {
 
     val activeTrips: StateFlow<List<Trip>> = tripRepo.observeActiveTrips()
@@ -72,6 +73,8 @@ class TripViewModel(
         }
     }
 
+    private suspend fun nextSequenceNumber(): Long = eventLogRepo.count() + 1
+
     fun createTrip(
         name: String,
         destination: String?,
@@ -91,12 +94,11 @@ class TripViewModel(
                 baseCurrency = baseCurrency,
                 createdAt = now,
             )
-            val seq = eventLogRepo.count() + 1
             val event = ExpenseEvent.TripCreated(
                 eventId = UUID.randomUUID().toString(),
                 timestamp = now,
-                sequenceNumber = seq,
-                deviceId = "android",
+                sequenceNumber = nextSequenceNumber(),
+                deviceId = deviceId,
                 trip = trip,
             )
             eventLogRepo.append(event)
@@ -107,12 +109,11 @@ class TripViewModel(
     fun archiveTrip(tripId: TripId) {
         viewModelScope.launch {
             val now = Clock.System.now()
-            val seq = eventLogRepo.count() + 1
             val event = ExpenseEvent.TripArchived(
                 eventId = UUID.randomUUID().toString(),
                 timestamp = now,
-                sequenceNumber = seq,
-                deviceId = "android",
+                sequenceNumber = nextSequenceNumber(),
+                deviceId = deviceId,
                 tripId = tripId,
             )
             eventLogRepo.append(event)
@@ -123,12 +124,11 @@ class TripViewModel(
     fun deleteExpense(expenseId: String) {
         viewModelScope.launch {
             val now = Clock.System.now()
-            val seq = eventLogRepo.count() + 1
             val event = ExpenseEvent.ExpenseDeleted(
                 eventId = UUID.randomUUID().toString(),
                 timestamp = now,
-                sequenceNumber = seq,
-                deviceId = "android",
+                sequenceNumber = nextSequenceNumber(),
+                deviceId = deviceId,
                 expenseId = expenseId,
             )
             eventLogRepo.append(event)

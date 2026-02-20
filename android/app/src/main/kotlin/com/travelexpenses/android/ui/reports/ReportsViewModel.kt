@@ -4,18 +4,19 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.travelexpenses.currency.CurrencyConverter
 import com.travelexpenses.export.CsvExporter
-import com.travelexpenses.model.Expense
 import com.travelexpenses.model.Trip
 import com.travelexpenses.model.TripId
 import com.travelexpenses.repository.ExpenseRepository
 import com.travelexpenses.repository.TripRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.math.BigDecimal
+import java.math.RoundingMode
 
 data class CategoryBreakdown(
     val categoryId: String,
     val categoryName: String,
-    val total: Double,
+    val total: String,
     val count: Int,
     val percentage: Float,
 )
@@ -67,20 +68,28 @@ class ReportsViewModel(
             val expenses = expenseRepo.getExpensesForTrip(tripId)
             val totalResult = currencyConverter.aggregateTripTotal(expenses, trip.baseCurrency)
 
-            // Category breakdown
+            // Category breakdown using BigDecimal for precision
             val byCategory = expenses.groupBy { it.categoryId }
-            val grandTotal = totalResult.total.toDoubleOrNull() ?: 0.0
+            val grandTotal = totalResult.total.toBigDecimalOrNull() ?: BigDecimal.ZERO
 
             val breakdown = byCategory.map { (catId, catExpenses) ->
-                val catTotal = catExpenses.sumOf { it.amount.toDoubleOrNull() ?: 0.0 }
+                val catTotal = catExpenses.fold(BigDecimal.ZERO) { acc, expense ->
+                    acc + (expense.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO)
+                }
+                val pct = if (grandTotal > BigDecimal.ZERO) {
+                    catTotal.multiply(BigDecimal(100))
+                        .divide(grandTotal, 1, RoundingMode.HALF_UP)
+                        .toFloat()
+                } else 0f
+
                 CategoryBreakdown(
                     categoryId = catId,
-                    categoryName = catId, // Will be resolved via category repo in UI
-                    total = catTotal,
+                    categoryName = catId,
+                    total = catTotal.setScale(2, RoundingMode.HALF_UP).toPlainString(),
                     count = catExpenses.size,
-                    percentage = if (grandTotal > 0) (catTotal / grandTotal * 100).toFloat() else 0f,
+                    percentage = pct,
                 )
-            }.sortedByDescending { it.total }
+            }.sortedByDescending { it.total.toBigDecimalOrNull() ?: BigDecimal.ZERO }
 
             // Daily average
             val days = if (trip.startDate != null && trip.endDate != null) {
@@ -93,14 +102,16 @@ class ReportsViewModel(
                 if (d > 0) d else 1
             } else 1
 
-            val avg = if (grandTotal > 0) grandTotal / days else 0.0
+            val avg = if (grandTotal > BigDecimal.ZERO) {
+                grandTotal.divide(BigDecimal(days), 2, RoundingMode.HALF_UP).toPlainString()
+            } else "0.00"
 
             _report.value = TripReport(
                 trip = trip,
                 totalAmount = "${totalResult.total} ${trip.baseCurrency}",
                 expenseCount = expenses.size,
                 categoryBreakdown = breakdown,
-                dailyAverage = "${"%.2f".format(avg)} ${trip.baseCurrency}",
+                dailyAverage = "$avg ${trip.baseCurrency}",
             )
             _isLoading.value = false
         }

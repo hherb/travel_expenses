@@ -22,6 +22,11 @@ fun ExpenseEntryScreen(
     expenseId: String?,
     onSaved: () -> Unit,
     onCancel: () -> Unit,
+    ocrVendor: String? = null,
+    ocrAmount: String? = null,
+    ocrCurrency: String? = null,
+    ocrDate: String? = null,
+    ocrTaxAmount: String? = null,
     viewModel: ExpenseViewModel = koinViewModel(),
 ) {
     val formState by viewModel.formState.collectAsState()
@@ -31,6 +36,15 @@ fun ExpenseEntryScreen(
     LaunchedEffect(tripId, expenseId) {
         when {
             expenseId != null -> viewModel.initForEdit(expenseId)
+            ocrAmount != null && tripId != null -> viewModel.initFromOcr(
+                tripId = tripId,
+                amount = ocrAmount.ifEmpty { null },
+                currency = ocrCurrency?.ifEmpty { null },
+                vendor = ocrVendor?.ifEmpty { null },
+                date = null, // Date parsing from OCR string deferred to date picker
+                taxAmount = ocrTaxAmount?.ifEmpty { null },
+                ocrConfidence = null,
+            )
             tripId != null -> viewModel.initForTrip(tripId)
         }
     }

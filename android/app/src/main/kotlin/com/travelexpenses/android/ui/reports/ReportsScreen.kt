@@ -216,7 +216,7 @@ private fun CategoryBreakdownItem(breakdown: CategoryBreakdown) {
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Text(
-                    text = "${"%.2f".format(breakdown.total)}",
+                    text = breakdown.total,
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary,
                 )

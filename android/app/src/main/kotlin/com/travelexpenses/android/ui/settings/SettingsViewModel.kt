@@ -1,10 +1,10 @@
 package com.travelexpenses.android.ui.settings
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.travelexpenses.android.auth.PinManager
 import com.travelexpenses.export.CsvExporter
-import com.travelexpenses.sync.EventArchive
 import com.travelexpenses.sync.EventArchiveSerializer
 import com.travelexpenses.sync.SyncManager
 import kotlinx.coroutines.flow.*
@@ -27,8 +27,10 @@ class SettingsViewModel(
     private val syncManager: SyncManager,
     private val csvExporter: CsvExporter,
     private val pinManager: PinManager,
-    private val defaultCategories: com.travelexpenses.validation.DefaultCategories,
+    private val context: Context,
 ) : ViewModel() {
+
+    private val securityPrefs = context.getSharedPreferences("travel_expenses_security", Context.MODE_PRIVATE)
 
     private val _settings = MutableStateFlow(SettingsState())
     val settings: StateFlow<SettingsState> = _settings
@@ -47,18 +49,23 @@ class SettingsViewModel(
     }
 
     private fun loadSettings() {
-        _settings.update {
-            it.copy(
-                pinEnabled = pinManager.isPinSet(),
-            )
-        }
+        val biometric = securityPrefs.getBoolean(KEY_BIOMETRIC_ENABLED, false)
+        val timeoutName = securityPrefs.getString(KEY_AUTO_LOCK_TIMEOUT, AutoLockTimeout.IMMEDIATE.name)
+        val timeout = AutoLockTimeout.entries.find { it.name == timeoutName } ?: AutoLockTimeout.IMMEDIATE
+        _settings.value = SettingsState(
+            biometricEnabled = biometric,
+            pinEnabled = pinManager.isPinSet(),
+            autoLockTimeout = timeout,
+        )
     }
 
     fun toggleBiometric(enabled: Boolean) {
+        securityPrefs.edit().putBoolean(KEY_BIOMETRIC_ENABLED, enabled).apply()
         _settings.update { it.copy(biometricEnabled = enabled) }
     }
 
     fun setAutoLockTimeout(timeout: AutoLockTimeout) {
+        securityPrefs.edit().putString(KEY_AUTO_LOCK_TIMEOUT, timeout.name).apply()
         _settings.update { it.copy(autoLockTimeout = timeout) }
     }
 
@@ -100,5 +107,10 @@ class SettingsViewModel(
             val csv = csvExporter.exportAll()
             _exportCsv.emit(csv)
         }
+    }
+
+    companion object {
+        private const val KEY_BIOMETRIC_ENABLED = "biometric_enabled"
+        private const val KEY_AUTO_LOCK_TIMEOUT = "auto_lock_timeout"
     }
 }

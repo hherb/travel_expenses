@@ -11,27 +11,23 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.travelexpenses.android.ocr.MlKitOcrEngine
+import com.travelexpenses.ocr.OcrEngine
 import com.travelexpenses.ocr.OcrParser
 import com.travelexpenses.ocr.OcrResult
-import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
-import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OcrReviewScreen(
     tripId: String,
-    onSaved: () -> Unit,
+    imagePath: String,
+    onSaveExpense: (vendor: String, amount: String, currency: String, date: String, taxAmount: String) -> Unit,
     onCancel: () -> Unit,
 ) {
-    val context = LocalContext.current
-    val ocrEngine: MlKitOcrEngine = koinInject()
+    val ocrEngine: OcrEngine = koinInject()
     val ocrParser: OcrParser = koinInject()
-    val scope = rememberCoroutineScope()
 
     var ocrResult by remember { mutableStateOf<OcrResult?>(null) }
     var isProcessing by remember { mutableStateOf(true) }
@@ -44,42 +40,25 @@ fun OcrReviewScreen(
     var date by remember { mutableStateOf("") }
     var taxAmount by remember { mutableStateOf("") }
 
-    LaunchedEffect(Unit) {
-        scope.launch {
-            val imagePath = File(context.cacheDir, "receipt_temp.jpg").absolutePath
-            val altPath = File(context.cacheDir, "receipt_gallery_temp.jpg").absolutePath
-
-            val path = when {
-                File(imagePath).exists() -> imagePath
-                File(altPath).exists() -> altPath
-                else -> null
-            }
-
-            if (path == null) {
-                errorMessage = "No receipt image found"
-                isProcessing = false
-                return@launch
-            }
-
-            val textResult = ocrEngine.recognizeText(path)
-            if (textResult == null) {
-                errorMessage = "Failed to recognize text from image"
-                isProcessing = false
-                return@launch
-            }
-
-            val result = ocrParser.parse(textResult.fullText)
-            ocrResult = result
-
-            // Populate editable fields
-            vendor = result.vendor ?: ""
-            amount = result.total ?: ""
-            currency = result.currency ?: "USD"
-            date = result.date ?: ""
-            taxAmount = result.tax ?: ""
-
+    LaunchedEffect(imagePath) {
+        val textResult = ocrEngine.recognizeText(imagePath)
+        if (textResult == null) {
+            errorMessage = "Failed to recognize text from image"
             isProcessing = false
+            return@LaunchedEffect
         }
+
+        val result = ocrParser.parse(textResult.fullText)
+        ocrResult = result
+
+        // Populate editable fields
+        vendor = result.vendor ?: ""
+        amount = result.total ?: ""
+        currency = result.currency ?: "USD"
+        date = result.date ?: ""
+        taxAmount = result.tax ?: ""
+
+        isProcessing = false
     }
 
     Scaffold(
@@ -93,7 +72,9 @@ fun OcrReviewScreen(
                 },
                 actions = {
                     if (!isProcessing && errorMessage == null) {
-                        IconButton(onClick = onSaved) {
+                        IconButton(onClick = {
+                            onSaveExpense(vendor, amount, currency, date, taxAmount)
+                        }) {
                             Icon(Icons.Default.Save, contentDescription = "Save")
                         }
                     }
@@ -227,7 +208,9 @@ fun OcrReviewScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Button(
-                    onClick = onSaved,
+                    onClick = {
+                        onSaveExpense(vendor, amount, currency, date, taxAmount)
+                    },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text("Save Expense")

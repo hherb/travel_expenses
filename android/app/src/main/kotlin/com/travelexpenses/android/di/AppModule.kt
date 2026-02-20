@@ -17,9 +17,11 @@ import com.travelexpenses.ocr.OcrParser
 import com.travelexpenses.repository.*
 import com.travelexpenses.sync.SyncManager
 import com.travelexpenses.validation.DefaultCategories
+import com.travelexpenses.validation.ExpenseValidator
 import kotlinx.coroutines.Dispatchers
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import java.util.UUID
 
@@ -28,6 +30,17 @@ val appModule = module {
     single {
         val driverFactory = DatabaseDriverFactory(androidContext())
         TravelExpensesDb(driverFactory.createDriver())
+    }
+
+    // Device ID (stable across app restarts, used for event sourcing)
+    single(named("deviceId")) {
+        androidContext()
+            .getSharedPreferences("travel_expenses", 0)
+            .let { prefs ->
+                prefs.getString("device_id", null) ?: UUID.randomUUID().toString().also {
+                    prefs.edit().putString("device_id", it).apply()
+                }
+            }
     }
 
     // Replay engine
@@ -48,16 +61,8 @@ val appModule = module {
     single { CsvExporter(get(), get(), get(), get()) }
     single { OcrParser() }
     single<OcrEngine> { MlKitOcrEngine() }
-    single {
-        val deviceId = androidContext()
-            .getSharedPreferences("travel_expenses", 0)
-            .let { prefs ->
-                prefs.getString("device_id", null) ?: UUID.randomUUID().toString().also {
-                    prefs.edit().putString("device_id", it).apply()
-                }
-            }
-        SyncManager(get(), get(), deviceId)
-    }
+    single { SyncManager(get(), get(), get(named("deviceId"))) }
+    single { ExpenseValidator() }
 
     // Default categories initializer
     single { DefaultCategories }
@@ -67,8 +72,8 @@ val appModule = module {
     single { BiometricHelper() }
 
     // ViewModels
-    viewModel { TripViewModel(get(), get(), get(), get(), get()) }
-    viewModel { ExpenseViewModel(get(), get(), get(), get(), get(), get()) }
+    viewModel { TripViewModel(get(), get(), get(), get(), get(), get(named("deviceId"))) }
+    viewModel { ExpenseViewModel(get(), get(), get(), get(), get(), get(named("deviceId"))) }
     viewModel { ReportsViewModel(get(), get(), get(), get()) }
-    viewModel { SettingsViewModel(get(), get(), get(), get()) }
+    viewModel { SettingsViewModel(get(), get(), get(), androidContext()) }
 }

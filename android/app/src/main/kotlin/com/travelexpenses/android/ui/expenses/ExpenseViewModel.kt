@@ -37,7 +37,7 @@ class ExpenseViewModel(
     private val categoryRepo: CategoryRepository,
     private val eventLogRepo: EventLogRepository,
     private val validator: ExpenseValidator,
-    private val defaultCategories: com.travelexpenses.validation.DefaultCategories,
+    private val deviceId: String,
 ) : ViewModel() {
 
     private val _formState = MutableStateFlow(ExpenseFormState())
@@ -114,20 +114,46 @@ class ExpenseViewModel(
     fun updateNotes(notes: String) = _formState.update { it.copy(notes = notes) }
     fun updateTaxAmount(tax: String) = _formState.update { it.copy(taxAmount = tax) }
 
+    private suspend fun nextSequenceNumber(): Long = eventLogRepo.count() + 1
+
     fun save() {
         viewModelScope.launch {
             val form = _formState.value
             val now = Clock.System.now()
-            val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+
+            // Build an Expense object for validation (used in both create and update)
+            val expenseId = editingExpenseId ?: UUID.randomUUID().toString()
+            val expense = Expense(
+                id = expenseId,
+                tripId = form.tripId,
+                amount = form.amount,
+                currency = form.currency,
+                categoryId = form.categoryId,
+                vendor = form.vendor.ifEmpty { null },
+                date = form.date,
+                notes = form.notes.ifEmpty { null },
+                tags = form.tags,
+                ocrConfidence = form.ocrConfidence,
+                taxAmount = form.taxAmount.ifEmpty { null },
+                createdAt = now,
+                lastModifiedAt = now,
+            )
+
+            val errors = validator.validate(expense)
+            if (errors.isNotEmpty()) {
+                _validationErrors.value = errors
+                return@launch
+            }
+
+            _validationErrors.value = emptyList()
 
             if (editingExpenseId != null) {
                 // Update existing expense
-                val seq = eventLogRepo.count() + 1
                 val event = ExpenseEvent.ExpenseUpdated(
                     eventId = UUID.randomUUID().toString(),
                     timestamp = now,
-                    sequenceNumber = seq,
-                    deviceId = "android",
+                    sequenceNumber = nextSequenceNumber(),
+                    deviceId = deviceId,
                     expenseId = editingExpenseId!!,
                     amount = form.amount,
                     currency = form.currency,
@@ -143,35 +169,11 @@ class ExpenseViewModel(
                 _saveComplete.emit(true)
             } else {
                 // Create new expense
-                val expenseId = UUID.randomUUID().toString()
-                val expense = Expense(
-                    id = expenseId,
-                    tripId = form.tripId,
-                    amount = form.amount,
-                    currency = form.currency,
-                    categoryId = form.categoryId,
-                    vendor = form.vendor.ifEmpty { null },
-                    date = form.date,
-                    notes = form.notes.ifEmpty { null },
-                    tags = form.tags,
-                    ocrConfidence = form.ocrConfidence,
-                    taxAmount = form.taxAmount.ifEmpty { null },
-                    createdAt = now,
-                    lastModifiedAt = now,
-                )
-
-                val errors = validator.validate(expense)
-                if (errors.isNotEmpty()) {
-                    _validationErrors.value = errors
-                    return@launch
-                }
-
-                val seq = eventLogRepo.count() + 1
                 val event = ExpenseEvent.ExpenseCreated(
                     eventId = UUID.randomUUID().toString(),
                     timestamp = now,
-                    sequenceNumber = seq,
-                    deviceId = "android",
+                    sequenceNumber = nextSequenceNumber(),
+                    deviceId = deviceId,
                     expense = expense,
                 )
                 eventLogRepo.append(event)
