@@ -89,6 +89,26 @@ class SqlDelightEventLogRepository(
         db.eventLogQueries.selectCount().executeAsOne()
     }
 
+    override suspend fun replaceAllEvents(events: List<ExpenseEvent>) = withContext(queryContext) {
+        mutex.withLock {
+            db.transaction {
+                db.eventLogQueries.deleteAll()
+                for (event in events) {
+                    val eventType = eventTypeOf(event)
+                    val payload = json.encodeToString(ExpenseEvent.serializer(), event)
+                    db.eventLogQueries.insert(
+                        event_id = event.eventId,
+                        sequence_number = event.sequenceNumber,
+                        device_id = event.deviceId,
+                        timestamp = event.timestamp.toString(),
+                        event_type = eventType,
+                        payload = payload,
+                    )
+                }
+            }
+        }
+    }
+
     override suspend fun clear() = withContext(queryContext) {
         db.eventLogQueries.deleteAll()
     }

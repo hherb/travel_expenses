@@ -43,6 +43,13 @@ interface EventLogRepository {
     /** Total number of events stored. */
     suspend fun count(): Long
 
+    /**
+     * Atomically replace all events in the log.
+     * Clears existing events and inserts [events] without triggering replay.
+     * Use for import/restore operations.
+     */
+    suspend fun replaceAllEvents(events: List<ExpenseEvent>)
+
     /** Delete all events (for testing). */
     suspend fun clear()
 }

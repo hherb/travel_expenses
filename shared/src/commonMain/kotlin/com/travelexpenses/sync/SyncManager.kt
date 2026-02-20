@@ -9,11 +9,11 @@ import kotlinx.datetime.Clock
 /**
  * Manages backup/restore of the event log archive.
  * v1: local archive export/import only.
- * v2 prep: event merge logic via vector clocks.
+ * v2 prep: event merge logic with eventId-based deduplication.
  */
 class SyncManager(
     private val eventLogRepo: EventLogRepository,
-    private val replayEngine: EventReplayEngine,
+    private val replayEngine: EventReplayEngine? = null,
     private val deviceId: DeviceId,
 ) {
 
@@ -36,43 +36,33 @@ class SyncManager(
 
     /**
      * Import an archive to restore state on this device.
-     * Clears existing data and replays all events from the archive.
+     * Atomically replaces the event log, then rebuilds materialized state.
      */
     suspend fun importArchive(archive: EventArchive) {
-        // Clear existing event log
-        eventLogRepo.clear()
+        // Atomically replace the event log (clear + bulk insert without replay)
+        eventLogRepo.replaceAllEvents(archive.events)
 
-        // Rebuild materialized state from archive events
-        replayEngine.rebuildAll(archive.events)
-
-        // Re-insert events into the event log (for future exports)
-        for (event in archive.events) {
-            eventLogRepo.append(event)
-        }
+        // Rebuild materialized state from the imported events
+        replayEngine?.rebuildAll(archive.events)
     }
 
     /**
      * Merge events from another device/archive into the current event log.
-     * Uses vector clock logic to avoid duplicate events.
+     * Deduplicates by eventId to safely handle gaps in sequence numbers.
      * Returns the number of new events added.
      */
     suspend fun mergeEvents(incomingEvents: List<ExpenseEvent>): MergeResult {
         val existingEvents = eventLogRepo.getAllEvents()
         val existingIds = existingEvents.map { it.eventId }.toSet()
 
-        // Vector clock: track (deviceId, maxSequenceNumber) for existing events
-        val vectorClock = buildVectorClock(existingEvents)
-
         val newEvents = mutableListOf<ExpenseEvent>()
         val skipped = mutableListOf<ExpenseEvent>()
 
         for (event in incomingEvents) {
-            when {
-                // Skip exact duplicate by eventId
-                event.eventId in existingIds -> skipped.add(event)
-                // Skip if we already have a higher sequence for this device
-                isSuperseded(event, vectorClock) -> skipped.add(event)
-                else -> newEvents.add(event)
+            if (event.eventId in existingIds) {
+                skipped.add(event)
+            } else {
+                newEvents.add(event)
             }
         }
 
@@ -95,30 +85,6 @@ class SyncManager(
             else -> emptyList()
         }
     }
-}
-
-/**
- * Build a vector clock from a list of events.
- * Maps deviceId -> maximum sequence number seen for that device.
- */
-internal fun buildVectorClock(events: List<ExpenseEvent>): Map<DeviceId, Long> {
-    val clock = mutableMapOf<DeviceId, Long>()
-    for (event in events) {
-        val current = clock[event.deviceId] ?: -1L
-        if (event.sequenceNumber > current) {
-            clock[event.deviceId] = event.sequenceNumber
-        }
-    }
-    return clock
-}
-
-/**
- * Check if an event is superseded by the vector clock
- * (i.e., we already have an equal or higher sequence for this device).
- */
-internal fun isSuperseded(event: ExpenseEvent, vectorClock: Map<DeviceId, Long>): Boolean {
-    val maxSeq = vectorClock[event.deviceId] ?: return false
-    return event.sequenceNumber <= maxSeq
 }
 
 /**

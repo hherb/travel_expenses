@@ -38,6 +38,12 @@ private class InMemoryEventLogRepository : EventLogRepository {
 
     override suspend fun count(): Long = events.size.toLong()
 
+    override suspend fun replaceAllEvents(events: List<ExpenseEvent>) {
+        this.events.clear()
+        this.events.addAll(events)
+        countFlow.value = this.events.size.toLong()
+    }
+
     override suspend fun clear() {
         events.clear()
         countFlow.value = 0
@@ -97,63 +103,20 @@ class EventArchiveSerializationTest {
     }
 }
 
-class VectorClockTest {
-
-    @Test
-    fun buildVectorClockFromEvents() {
-        TestHelpers.resetSequence()
-        val events = listOf(
-            TestHelpers.makeExpenseCreatedEvent(deviceId = "d1", sequenceNumber = 1),
-            TestHelpers.makeExpenseCreatedEvent(deviceId = "d1", sequenceNumber = 2),
-            TestHelpers.makeExpenseCreatedEvent(deviceId = "d2", sequenceNumber = 1),
-            TestHelpers.makeExpenseCreatedEvent(deviceId = "d2", sequenceNumber = 5),
-        )
-        val clock = buildVectorClock(events)
-        assertEquals(2L, clock["d1"])
-        assertEquals(5L, clock["d2"])
-    }
-
-    @Test
-    fun emptyEventsEmptyClock() {
-        val clock = buildVectorClock(emptyList())
-        assertTrue(clock.isEmpty())
-    }
-
-    @Test
-    fun isSupersededReturnsTrueForOlderSequence() {
-        val clock = mapOf("d1" to 5L)
-        val event = TestHelpers.makeExpenseCreatedEvent(deviceId = "d1", sequenceNumber = 3)
-        assertTrue(isSuperseded(event, clock))
-    }
-
-    @Test
-    fun isSupersededReturnsFalseForNewDevice() {
-        val clock = mapOf("d1" to 5L)
-        val event = TestHelpers.makeExpenseCreatedEvent(deviceId = "d2", sequenceNumber = 1)
-        assertTrue(!isSuperseded(event, clock))
-    }
-
-    @Test
-    fun isSupersededReturnsTrueForEqualSequence() {
-        val clock = mapOf("d1" to 5L)
-        val event = TestHelpers.makeExpenseCreatedEvent(deviceId = "d1", sequenceNumber = 5)
-        assertTrue(isSuperseded(event, clock))
-    }
-
-    @Test
-    fun isSupersededReturnsFalseForNewerSequence() {
-        val clock = mapOf("d1" to 5L)
-        val event = TestHelpers.makeExpenseCreatedEvent(deviceId = "d1", sequenceNumber = 6)
-        assertTrue(!isSuperseded(event, clock))
-    }
-}
-
 class MergeLogicTest {
+
+    private fun makeSyncManager(repo: InMemoryEventLogRepository): SyncManager {
+        return SyncManager(
+            eventLogRepo = repo,
+            deviceId = "test-device",
+        )
+    }
 
     @Test
     fun mergeSkipsDuplicateEventIds() = runTest {
         TestHelpers.resetSequence()
         val repo = InMemoryEventLogRepository()
+        val syncManager = makeSyncManager(repo)
         val event1 = TestHelpers.makeExpenseCreatedEvent(
             expense = TestHelpers.makeExpense(id = "e1"),
             deviceId = "d1",
@@ -161,23 +124,16 @@ class MergeLogicTest {
         )
         repo.append(event1)
 
-        // Incoming contains the same event
-        val incoming = listOf(event1)
-
-        val existingEvents = repo.getAllEvents()
-        val existingIds = existingEvents.map { it.eventId }.toSet()
-        val vectorClock = buildVectorClock(existingEvents)
-
-        val newEvents = incoming.filter { event ->
-            event.eventId !in existingIds && !isSuperseded(event, vectorClock)
-        }
-        assertEquals(0, newEvents.size)
+        val result = syncManager.mergeEvents(listOf(event1))
+        assertEquals(0, result.added)
+        assertEquals(1, result.skipped)
     }
 
     @Test
     fun mergeAcceptsNewEventsFromNewDevice() = runTest {
         TestHelpers.resetSequence()
         val repo = InMemoryEventLogRepository()
+        val syncManager = makeSyncManager(repo)
         val event1 = TestHelpers.makeExpenseCreatedEvent(
             expense = TestHelpers.makeExpense(id = "e1"),
             deviceId = "d1",
@@ -190,25 +146,18 @@ class MergeLogicTest {
             deviceId = "d2",
             sequenceNumber = 1,
         )
-        val incoming = listOf(event2)
-
-        val existingEvents = repo.getAllEvents()
-        val existingIds = existingEvents.map { it.eventId }.toSet()
-        val vectorClock = buildVectorClock(existingEvents)
-
-        val newEvents = incoming.filter { event ->
-            event.eventId !in existingIds && !isSuperseded(event, vectorClock)
-        }
-        assertEquals(1, newEvents.size)
+        val result = syncManager.mergeEvents(listOf(event2))
+        assertEquals(1, result.added)
     }
 
     @Test
-    fun mergeSkipsSupersededEvents() = runTest {
+    fun mergeAcceptsEventsWithSequenceGaps() = runTest {
         TestHelpers.resetSequence()
         val repo = InMemoryEventLogRepository()
+        val syncManager = makeSyncManager(repo)
 
-        // Device d1 already has sequence up to 5
-        for (i in 1L..5L) {
+        // Device d1 has sequences 1, 2, 3, 5 (gap at 4)
+        for (i in listOf(1L, 2L, 3L, 5L)) {
             repo.append(TestHelpers.makeExpenseCreatedEvent(
                 expense = TestHelpers.makeExpense(id = "e-d1-$i"),
                 deviceId = "d1",
@@ -216,13 +165,32 @@ class MergeLogicTest {
             ))
         }
 
-        // Incoming has d1 sequence 3 (already seen) and d1 sequence 6 (new)
+        // Incoming has the missing event 4 — must NOT be dropped
+        val missingEvent = TestHelpers.makeExpenseCreatedEvent(
+            expense = TestHelpers.makeExpense(id = "e-d1-4"),
+            deviceId = "d1",
+            sequenceNumber = 4,
+        )
+        val result = syncManager.mergeEvents(listOf(missingEvent))
+        assertEquals(1, result.added)
+        assertEquals(0, result.skipped)
+    }
+
+    @Test
+    fun mergeSkipsDuplicateButAcceptsNew() = runTest {
+        TestHelpers.resetSequence()
+        val repo = InMemoryEventLogRepository()
+        val syncManager = makeSyncManager(repo)
+
+        val existing = TestHelpers.makeExpenseCreatedEvent(
+            expense = TestHelpers.makeExpense(id = "e-old"),
+            deviceId = "d1",
+            sequenceNumber = 3,
+        )
+        repo.append(existing)
+
         val incoming = listOf(
-            TestHelpers.makeExpenseCreatedEvent(
-                expense = TestHelpers.makeExpense(id = "e-old"),
-                deviceId = "d1",
-                sequenceNumber = 3,
-            ),
+            existing, // duplicate
             TestHelpers.makeExpenseCreatedEvent(
                 expense = TestHelpers.makeExpense(id = "e-new"),
                 deviceId = "d1",
@@ -230,15 +198,9 @@ class MergeLogicTest {
             ),
         )
 
-        val existingEvents = repo.getAllEvents()
-        val existingIds = existingEvents.map { it.eventId }.toSet()
-        val vectorClock = buildVectorClock(existingEvents)
-
-        val newEvents = incoming.filter { event ->
-            event.eventId !in existingIds && !isSuperseded(event, vectorClock)
-        }
-        assertEquals(1, newEvents.size)
-        assertEquals("d1", newEvents[0].deviceId)
-        assertEquals(6L, newEvents[0].sequenceNumber)
+        val result = syncManager.mergeEvents(incoming)
+        assertEquals(1, result.added)
+        assertEquals(1, result.skipped)
+        assertEquals(6L, result.newEvents[0].sequenceNumber)
     }
 }
