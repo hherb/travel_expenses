@@ -1,7 +1,6 @@
 package com.travelexpenses.validation
 
 import com.travelexpenses.model.Expense
-import kotlinx.datetime.LocalDate
 
 /**
  * Validates expense data before creating events.
@@ -15,12 +14,10 @@ object ExpenseValidator {
     fun validate(expense: Expense): List<ValidationError> {
         val errors = mutableListOf<ValidationError>()
 
-        // Amount must be positive
-        val amount = expense.amount.toDoubleOrNull()
-        if (amount == null) {
-            errors.add(ValidationError.INVALID_AMOUNT)
-        } else if (amount <= 0) {
-            errors.add(ValidationError.NON_POSITIVE_AMOUNT)
+        // Amount must be a valid positive decimal (string-based, no Double)
+        when (decimalSign(expense.amount)) {
+            null -> errors.add(ValidationError.INVALID_AMOUNT)
+            0, -1 -> errors.add(ValidationError.NON_POSITIVE_AMOUNT)
         }
 
         // Currency code must be 3 uppercase letters (ISO 4217)
@@ -41,11 +38,9 @@ object ExpenseValidator {
         // Tax amount if present must be non-negative
         expense.taxAmount?.let { taxStr ->
             if (taxStr.isNotEmpty()) {
-                val tax = taxStr.toDoubleOrNull()
-                if (tax == null) {
-                    errors.add(ValidationError.INVALID_TAX_AMOUNT)
-                } else if (tax < 0) {
-                    errors.add(ValidationError.NEGATIVE_TAX_AMOUNT)
+                when (decimalSign(taxStr)) {
+                    null -> errors.add(ValidationError.INVALID_TAX_AMOUNT)
+                    -1 -> errors.add(ValidationError.NEGATIVE_TAX_AMOUNT)
                 }
             }
         }
@@ -72,8 +67,8 @@ object ExpenseValidator {
 object FieldValidator {
 
     fun isValidAmount(amount: String): Boolean {
-        val d = amount.toDoubleOrNull() ?: return false
-        return d > 0
+        val sign = decimalSign(amount) ?: return false
+        return sign == 1
     }
 
     fun isValidCurrencyCode(code: String): Boolean {
@@ -82,8 +77,8 @@ object FieldValidator {
 
     fun isValidTaxAmount(tax: String): Boolean {
         if (tax.isEmpty()) return true
-        val d = tax.toDoubleOrNull() ?: return false
-        return d >= 0
+        val sign = decimalSign(tax) ?: return false
+        return sign >= 0
     }
 }
 
@@ -92,6 +87,24 @@ object FieldValidator {
  */
 private fun isValidCurrencyCode(code: String): Boolean {
     return code.length == 3 && code.all { it in 'A'..'Z' }
+}
+
+private val DECIMAL_PATTERN = Regex("""^-?\d+(\.\d+)?$""")
+
+/**
+ * Returns the sign of a string-encoded decimal: 1 (positive), 0 (zero), -1 (negative),
+ * or null if the string is not a valid decimal. Avoids Double/Float to preserve precision.
+ */
+internal fun decimalSign(value: String): Int? {
+    if (!DECIMAL_PATTERN.matches(value)) return null
+    val negative = value.startsWith('-')
+    val digits = if (negative) value.drop(1) else value
+    val isZero = digits.all { it == '0' || it == '.' }
+    return when {
+        isZero -> 0
+        negative -> -1
+        else -> 1
+    }
 }
 
 enum class ValidationError(val message: String) {

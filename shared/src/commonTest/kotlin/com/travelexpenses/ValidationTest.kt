@@ -285,20 +285,12 @@ class DefaultCategoriesTest {
     @Test
     fun getByIdWorks() {
         val category = com.travelexpenses.validation.DefaultCategories.getById("cat-food-drink")
-        assertNotNull(category)
-        assertEquals("Food & Drink", category.name)
+        kotlin.test.assertNotNull(category)
+        kotlin.test.assertEquals("Food & Drink", category.name)
     }
 
     @Test
     fun idsSetContainsAllDefaults() {
-        assertEquals(9, com.travelexpenses.validation.DefaultCategories.ids.size)
-    }
-
-    private fun assertNotNull(value: Any?) {
-        kotlin.test.assertNotNull(value)
-    }
-
-    private fun assertEquals(expected: Any?, actual: Any?) {
-        kotlin.test.assertEquals(expected, actual)
+        kotlin.test.assertEquals(9, com.travelexpenses.validation.DefaultCategories.ids.size)
     }
 }
