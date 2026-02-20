@@ -2,6 +2,7 @@ package com.travelexpenses.android.di
 
 import com.travelexpenses.android.auth.BiometricHelper
 import com.travelexpenses.android.auth.PinManager
+import com.travelexpenses.android.init.DefaultCategoryInitializer
 import com.travelexpenses.android.ocr.MlKitOcrEngine
 import com.travelexpenses.android.ui.expenses.ExpenseViewModel
 import com.travelexpenses.android.ui.reports.ReportsViewModel
@@ -18,7 +19,9 @@ import com.travelexpenses.repository.*
 import com.travelexpenses.sync.SyncManager
 import com.travelexpenses.validation.DefaultCategories
 import com.travelexpenses.validation.ExpenseValidator
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.qualifier.named
@@ -54,6 +57,7 @@ val appModule = module {
     single<TripRepository> { SqlDelightTripRepository(get(), Dispatchers.IO) }
     single<CategoryRepository> { SqlDelightCategoryRepository(get(), Dispatchers.IO) }
     single<ExchangeRateRepository> { SqlDelightExchangeRateRepository(get(), Dispatchers.IO) }
+    single<TagRepository> { SqlDelightTagRepository(get(), Dispatchers.IO) }
 
     // Business logic
     single { CurrencyConverter(get()) }
@@ -66,6 +70,11 @@ val appModule = module {
 
     // Default categories initializer
     single { DefaultCategories }
+    // Application-scoped coroutine scope — lives for entire process lifetime (not cancelled)
+    single(named("appScope")) { CoroutineScope(SupervisorJob() + Dispatchers.IO) }
+    single {
+        DefaultCategoryInitializer(get(), get(), get(named("deviceId")), get(named("appScope")))
+    }
 
     // Security
     single { PinManager(androidContext()) }
@@ -73,7 +82,7 @@ val appModule = module {
 
     // ViewModels
     viewModel { TripViewModel(get(), get(), get(), get(), get(), get(named("deviceId"))) }
-    viewModel { ExpenseViewModel(get(), get(), get(), get(), get(), get(named("deviceId"))) }
-    viewModel { ReportsViewModel(get(), get(), get(), get()) }
+    viewModel { ExpenseViewModel(get(), get(), get(), get(), get(), get(), get(named("deviceId"))) }
+    viewModel { ReportsViewModel(get(), get(), get(), get(), get()) }
     viewModel { SettingsViewModel(get(), get(), get(), androidContext()) }
 }

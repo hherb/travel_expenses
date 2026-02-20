@@ -13,9 +13,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.travelexpenses.android.ocr.ImagePreprocessor
 import com.travelexpenses.ocr.OcrEngine
 import com.travelexpenses.ocr.OcrParser
 import com.travelexpenses.ocr.OcrResult
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -41,7 +44,12 @@ fun OcrReviewScreen(
     var taxAmount by remember { mutableStateOf("") }
 
     LaunchedEffect(imagePath) {
-        val textResult = ocrEngine.recognizeText(imagePath)
+        // Preprocess image for better OCR accuracy (grayscale + contrast)
+        val preprocessedPath = withContext(Dispatchers.IO) {
+            ImagePreprocessor.preprocess(imagePath)
+        }
+
+        val textResult = ocrEngine.recognizeText(preprocessedPath)
         if (textResult == null) {
             errorMessage = "Failed to recognize text from image"
             isProcessing = false

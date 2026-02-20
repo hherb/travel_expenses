@@ -1,6 +1,6 @@
 # TODO -- Travel Expenses v1.0
 
-Status: **Phase 0 + Phase 1 + Phase 2 + Phase 3 (Android App) complete.**
+Status: **Phase 0 + Phase 1 + Phase 2 + Phase 3 + Phase 4 (Android Polish) complete.**
 
 Full spec: `SPEC.md`. Build/test commands: `CLAUDE.md`. Machine paths: `LOCAL_BUILD_ENV.md`.
 
@@ -12,6 +12,7 @@ Full spec: `SPEC.md`. Build/test commands: `CLAUDE.md`. Machine paths: `LOCAL_BU
 - [x] **Phase 1** -- Event types (11), materialized state (6 tables), replay engine, read-side repos, exchange rate table
 - [x] **Phase 2** -- KMP shared logic: OCR parser, currency converter, CSV export, business rules, sync foundation
 - [x] **Phase 3** -- Android app: Jetpack Compose UI, DI (Koin), navigation, ML Kit OCR, BiometricPrompt + PIN security, Ktor exchange rate client
+- [x] **Phase 4** -- Android polish: date picker, vendor autocomplete, tag picker, pie charts, image preprocessing, app switcher security, default categories
 
 ### Phase 2 Details
 
@@ -94,6 +95,23 @@ Full spec: `SPEC.md`. Build/test commands: `CLAUDE.md`. Machine paths: `LOCAL_BU
 - [x] `LockScreen` composable -- PIN entry with auto-verify, biometric button
 - [x] Auto-lock timeout settings (immediate, 1 min, 5 min, 15 min)
 
+### Phase 4 Details
+
+#### Android Polish & Enhancements
+- [x] **Default categories initialization** -- `DefaultCategoryInitializer` seeds 9 default categories on first launch via `CategoryCreated` events
+- [x] **Material 3 date picker** -- `DatePickerDialog` in expense entry screen replaces read-only text field
+- [x] **Vendor autocomplete** -- `ExposedDropdownMenuBox` with distinct vendor names from expense history
+- [x] **Tag multi-select picker** -- tag selection dialog with checkboxes, inline tag creation via `TagCreated` events, chip display with removal
+- [x] **Pie chart for category distribution** -- Canvas-based pie chart with color-coded legend in reports screen
+- [x] **Category name resolution** -- reports now show human-readable category names instead of raw IDs
+- [x] **App switcher security** -- `FLAG_SECURE` set/cleared dynamically based on PIN/biometric state
+- [x] **Image preprocessing for OCR** -- `ImagePreprocessor` applies grayscale + contrast enhancement before ML Kit text recognition
+
+#### Shared Module Additions
+- [x] `TagRepository` interface + `SqlDelightTagRepository` implementation (observe/query tags)
+- [x] `selectDistinctVendors` SQL query for vendor autocomplete
+- [x] `getDistinctVendors()` added to `ExpenseRepository` interface + implementation
+
 ---
 
 ## Remaining
@@ -124,17 +142,6 @@ Full spec: `SPEC.md`. Build/test commands: `CLAUDE.md`. Machine paths: `LOCAL_BU
 
 ---
 
-### Android: Polish & Enhancements
-- [ ] Image preprocessing (deskew, contrast) before OCR
-- [ ] Hide content in app switcher when locked
-- [ ] Vendor name autocomplete from history
-- [ ] Tag multi-select picker with inline creation
-- [ ] Date picker (calendar) integration
-- [ ] Charts in Reports (pie/bar for category distribution)
-- [ ] Default categories initialization on first launch
-
----
-
 ## Open Decisions (SPEC.md Section 11)
 
 1. ~~**Exchange rate API provider**~~ -- **Resolved**: frankfurter.app (free, no key required)
@@ -145,7 +152,6 @@ Full spec: `SPEC.md`. Build/test commands: `CLAUDE.md`. Machine paths: `LOCAL_BU
 ## Suggested Next Steps
 
 1. **iOS app skeleton** -- DI, navigation, basic SwiftUI screens
-2. **Android polish** -- date picker, tag picker, charts, vendor autocomplete
-3. **Image preprocessing** -- deskew/contrast before OCR on both platforms
-4. **Accessibility** -- audit + fix labels, contrast, scaling
-5. **End-to-end testing** -- full capture flow on Android device
+2. **Accessibility** -- audit + fix labels, contrast, scaling on Android
+3. **End-to-end testing** -- full capture flow on Android device
+4. **Performance** -- SQLite query benchmarks, lazy loading for large trip histories

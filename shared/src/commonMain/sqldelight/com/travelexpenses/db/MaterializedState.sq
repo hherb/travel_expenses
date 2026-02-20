@@ -185,6 +185,10 @@ DELETE FROM receipt_image WHERE id = ? AND expense_id = ?;
 selectReceiptsForExpense:
 SELECT * FROM receipt_image WHERE expense_id = ?;
 
+-- Vendor autocomplete: distinct non-null vendor names
+selectDistinctVendors:
+SELECT DISTINCT vendor FROM expense WHERE vendor IS NOT NULL AND vendor != '' AND is_deleted = 0 ORDER BY vendor;
+
 -- Clear all materialized state (for full rebuild)
 clearAllTrips:
 DELETE FROM trip;

@@ -10,4 +10,5 @@ interface ExpenseRepository {
     suspend fun getTagsForExpense(expenseId: ExpenseId): List<Tag>
     suspend fun getReceiptsForExpense(expenseId: ExpenseId): List<ReceiptImage>
     fun observeExpensesForTrip(tripId: TripId): Flow<List<Expense>>
+    suspend fun getDistinctVendors(): List<String>
 }
