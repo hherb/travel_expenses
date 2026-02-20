@@ -70,6 +70,7 @@ val appModule = module {
 
     // Default categories initializer
     single { DefaultCategories }
+    // Application-scoped coroutine scope — lives for entire process lifetime (not cancelled)
     single(named("appScope")) { CoroutineScope(SupervisorJob() + Dispatchers.IO) }
     single {
         DefaultCategoryInitializer(get(), get(), get(named("deviceId")), get(named("appScope")))

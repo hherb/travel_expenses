@@ -6,28 +6,31 @@ import android.graphics.Canvas
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.Paint
+import android.util.Log
 import java.io.File
 import java.io.FileOutputStream
 
 /**
  * Preprocesses receipt images before OCR to improve text recognition accuracy.
- * Applies contrast enhancement, grayscale conversion, and sharpening.
+ * Applies contrast enhancement and grayscale conversion.
  */
 object ImagePreprocessor {
 
+    private const val TAG = "ImagePreprocessor"
+
     /**
-     * Preprocesses an image file in-place for improved OCR accuracy.
+     * Preprocesses an image file for improved OCR accuracy.
      * - Converts to grayscale
      * - Enhances contrast
-     * - Applies sharpening
+     *
+     * Writes the result to a temporary file to preserve the original.
      *
      * @param imagePath path to the image file
-     * @return the same path (image is modified in-place) or null if processing failed
+     * @return path to the preprocessed temp file, or the original path if processing failed
      */
-    fun preprocess(imagePath: String): String? {
+    fun preprocess(imagePath: String): String {
         return try {
             val options = BitmapFactory.Options().apply {
-                // Limit memory: decode at most 4096px on longest edge
                 inJustDecodeBounds = true
             }
             BitmapFactory.decodeFile(imagePath, options)
@@ -39,20 +42,25 @@ object ImagePreprocessor {
                 inSampleSize = sampleSize
                 inMutable = false
             }
-            val original = BitmapFactory.decodeFile(imagePath, decodeOptions) ?: return null
+            val original = BitmapFactory.decodeFile(imagePath, decodeOptions)
+            if (original == null) {
+                Log.w(TAG, "Failed to decode image: $imagePath")
+                return imagePath
+            }
 
             val processed = enhanceForOcr(original)
             original.recycle()
 
-            // Write back
-            FileOutputStream(File(imagePath)).use { out ->
+            val sourceFile = File(imagePath)
+            val tempFile = File(sourceFile.parent, "ocr_preprocessed_${sourceFile.name}")
+            FileOutputStream(tempFile).use { out ->
                 processed.compress(Bitmap.CompressFormat.JPEG, 95, out)
             }
             processed.recycle()
 
-            imagePath
+            tempFile.absolutePath
         } catch (e: Exception) {
-            // If preprocessing fails, return the original image path so OCR can still proceed
+            Log.w(TAG, "Image preprocessing failed, using original", e)
             imagePath
         }
     }
@@ -65,14 +73,11 @@ object ImagePreprocessor {
         val canvas = Canvas(result)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)
 
-        // Step 1: Convert to grayscale and boost contrast
-        // The ColorMatrix combines grayscale + contrast in a single pass
-        val contrastFactor = 1.5f // Increase contrast by 50%
+        val contrastFactor = 1.5f
         val translate = (-0.5f * contrastFactor + 0.5f) * 255f
 
         val colorMatrix = ColorMatrix(
             floatArrayOf(
-                // Grayscale with luminance weights, then apply contrast
                 0.299f * contrastFactor, 0.587f * contrastFactor, 0.114f * contrastFactor, 0f, translate,
                 0.299f * contrastFactor, 0.587f * contrastFactor, 0.114f * contrastFactor, 0f, translate,
                 0.299f * contrastFactor, 0.587f * contrastFactor, 0.114f * contrastFactor, 0f, translate,

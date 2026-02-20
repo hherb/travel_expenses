@@ -29,6 +29,7 @@ private class FakeExpenseRepository(
     override suspend fun getTagsForExpense(expenseId: ExpenseId) = tags[expenseId] ?: emptyList()
     override suspend fun getReceiptsForExpense(expenseId: ExpenseId) = receipts[expenseId] ?: emptyList()
     override fun observeExpensesForTrip(tripId: TripId): Flow<List<Expense>> = flowOf(expenses.filter { it.tripId == tripId })
+    override suspend fun getDistinctVendors(): List<String> = expenses.mapNotNull { it.vendor }.filter { it.isNotEmpty() }.distinct().sorted()
 }
 
 private class FakeTripRepository(

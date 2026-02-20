@@ -47,7 +47,7 @@ fun OcrReviewScreen(
         // Preprocess image for better OCR accuracy (grayscale + contrast)
         val preprocessedPath = withContext(Dispatchers.IO) {
             ImagePreprocessor.preprocess(imagePath)
-        } ?: imagePath
+        }
 
         val textResult = ocrEngine.recognizeText(preprocessedPath)
         if (textResult == null) {

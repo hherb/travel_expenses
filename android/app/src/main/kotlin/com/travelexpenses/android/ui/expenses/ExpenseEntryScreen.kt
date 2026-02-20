@@ -142,22 +142,28 @@ fun ExpenseEntryScreen(
                 suggestions = vendorSuggestions,
             )
 
-            // Date with picker
-            OutlinedTextField(
-                value = formState.date.toString(),
-                onValueChange = {},
-                label = { Text("Date") },
-                singleLine = true,
-                readOnly = true,
-                trailingIcon = {
-                    IconButton(onClick = { showDatePicker = true }) {
-                        Icon(Icons.Default.CalendarMonth, contentDescription = "Pick date")
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { showDatePicker = true },
-            )
+            // Date with picker — Box overlay makes the entire field tappable
+            Box {
+                OutlinedTextField(
+                    value = formState.date.toString(),
+                    onValueChange = {},
+                    label = { Text("Date") },
+                    singleLine = true,
+                    readOnly = true,
+                    trailingIcon = {
+                        IconButton(onClick = { showDatePicker = true }) {
+                            Icon(Icons.Default.CalendarMonth, contentDescription = "Pick date")
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                // Transparent overlay to intercept taps on the read-only field
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clickable { showDatePicker = true },
+                )
+            }
 
             // Tags
             TagSection(
