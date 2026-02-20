@@ -1,6 +1,7 @@
 package com.travelexpenses.android.ui.reports
 
 import android.content.Intent
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -10,9 +11,29 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.*
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import org.koin.androidx.compose.koinViewModel
+
+// Chart color palette
+private val chartColors = listOf(
+    Color(0xFF4285F4), // Blue
+    Color(0xFFEA4335), // Red
+    Color(0xFFFBBC04), // Yellow
+    Color(0xFF34A853), // Green
+    Color(0xFFFF6D01), // Orange
+    Color(0xFF46BDC6), // Teal
+    Color(0xFF7B1FA2), // Purple
+    Color(0xFFE91E63), // Pink
+    Color(0xFF795548), // Brown
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -109,8 +130,23 @@ fun ReportsScreen(
                     }
                 }
 
-                // Category breakdown
+                // Pie chart for category distribution
                 if (tripReport.categoryBreakdown.isNotEmpty()) {
+                    item {
+                        Text(
+                            "Category Distribution",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(top = 8.dp),
+                        )
+                    }
+
+                    item {
+                        CategoryPieChart(
+                            breakdown = tripReport.categoryBreakdown,
+                        )
+                    }
+
+                    // Category breakdown list
                     item {
                         Text(
                             "By Category",
@@ -120,7 +156,11 @@ fun ReportsScreen(
                     }
 
                     items(tripReport.categoryBreakdown) { breakdown ->
-                        CategoryBreakdownItem(breakdown = breakdown)
+                        val colorIndex = tripReport.categoryBreakdown.indexOf(breakdown) % chartColors.size
+                        CategoryBreakdownItem(
+                            breakdown = breakdown,
+                            color = chartColors[colorIndex],
+                        )
                     }
                 }
             }
@@ -153,6 +193,73 @@ fun ReportsScreen(
                         Text(
                             "No trips to report on",
                             style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CategoryPieChart(
+    breakdown: List<CategoryBreakdown>,
+) {
+    val textMeasurer = rememberTextMeasurer()
+    val onSurface = MaterialTheme.colorScheme.onSurface
+
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // Pie chart
+            Canvas(
+                modifier = Modifier.size(140.dp),
+            ) {
+                var startAngle = -90f
+                breakdown.forEachIndexed { index, item ->
+                    val sweepAngle = item.percentage / 100f * 360f
+                    val color = chartColors[index % chartColors.size]
+                    drawArc(
+                        color = color,
+                        startAngle = startAngle,
+                        sweepAngle = sweepAngle,
+                        useCenter = true,
+                        size = Size(size.width, size.height),
+                    )
+                    startAngle += sweepAngle
+                }
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // Legend
+            Column(
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.weight(1f),
+            ) {
+                breakdown.forEachIndexed { index, item ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Canvas(modifier = Modifier.size(12.dp)) {
+                            drawCircle(color = chartColors[index % chartColors.size])
+                        }
+                        Text(
+                            text = item.categoryName,
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Text(
+                            text = "${"%.0f".format(item.percentage)}%",
+                            style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
@@ -204,17 +311,29 @@ private fun TripSelector(
 }
 
 @Composable
-private fun CategoryBreakdownItem(breakdown: CategoryBreakdown) {
+private fun CategoryBreakdownItem(
+    breakdown: CategoryBreakdown,
+    color: Color = MaterialTheme.colorScheme.primary,
+) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = breakdown.categoryName,
-                    style = MaterialTheme.typography.titleMedium,
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Canvas(modifier = Modifier.size(12.dp)) {
+                        drawCircle(color = color)
+                    }
+                    Text(
+                        text = breakdown.categoryName,
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                }
                 Text(
                     text = breakdown.total,
                     style = MaterialTheme.typography.titleMedium,
@@ -225,6 +344,7 @@ private fun CategoryBreakdownItem(breakdown: CategoryBreakdown) {
             LinearProgressIndicator(
                 progress = { breakdown.percentage / 100f },
                 modifier = Modifier.fillMaxWidth(),
+                color = color,
             )
             Spacer(modifier = Modifier.height(4.dp))
             Row(

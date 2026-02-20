@@ -7,6 +7,7 @@ import com.travelexpenses.model.*
 import com.travelexpenses.repository.CategoryRepository
 import com.travelexpenses.repository.EventLogRepository
 import com.travelexpenses.repository.ExpenseRepository
+import com.travelexpenses.repository.TagRepository
 import com.travelexpenses.repository.TripRepository
 import com.travelexpenses.validation.ExpenseValidator
 import com.travelexpenses.validation.ValidationError
@@ -35,6 +36,7 @@ class ExpenseViewModel(
     private val expenseRepo: ExpenseRepository,
     private val tripRepo: TripRepository,
     private val categoryRepo: CategoryRepository,
+    private val tagRepo: TagRepository,
     private val eventLogRepo: EventLogRepository,
     private val validator: ExpenseValidator,
     private val deviceId: String,
@@ -46,6 +48,12 @@ class ExpenseViewModel(
     val categories: StateFlow<List<Category>> = categoryRepo.observeAllCategories()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val allTags: StateFlow<List<Tag>> = tagRepo.observeAllTags()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val _vendorSuggestions = MutableStateFlow<List<String>>(emptyList())
+    val vendorSuggestions: StateFlow<List<String>> = _vendorSuggestions
+
     private val _validationErrors = MutableStateFlow<List<ValidationError>>(emptyList())
     val validationErrors: StateFlow<List<ValidationError>> = _validationErrors
 
@@ -53,6 +61,16 @@ class ExpenseViewModel(
     val saveComplete: SharedFlow<Boolean> = _saveComplete
 
     private var editingExpenseId: String? = null
+
+    init {
+        loadVendorSuggestions()
+    }
+
+    private fun loadVendorSuggestions() {
+        viewModelScope.launch {
+            _vendorSuggestions.value = expenseRepo.getDistinctVendors()
+        }
+    }
 
     fun initForTrip(tripId: String) {
         viewModelScope.launch {
@@ -114,6 +132,33 @@ class ExpenseViewModel(
     fun updateNotes(notes: String) = _formState.update { it.copy(notes = notes) }
     fun updateTaxAmount(tax: String) = _formState.update { it.copy(taxAmount = tax) }
 
+    fun addTag(tagId: String) {
+        _formState.update {
+            if (tagId !in it.tags) it.copy(tags = it.tags + tagId) else it
+        }
+    }
+
+    fun removeTag(tagId: String) {
+        _formState.update { it.copy(tags = it.tags - tagId) }
+    }
+
+    fun createTag(label: String) {
+        viewModelScope.launch {
+            val now = Clock.System.now()
+            val tagId = UUID.randomUUID().toString()
+            val tag = Tag(id = tagId, label = label)
+            val event = ExpenseEvent.TagCreated(
+                eventId = UUID.randomUUID().toString(),
+                timestamp = now,
+                sequenceNumber = nextSequenceNumber(),
+                deviceId = deviceId,
+                tag = tag,
+            )
+            eventLogRepo.append(event)
+            addTag(tagId)
+        }
+    }
+
     private suspend fun nextSequenceNumber(): Long = eventLogRepo.count() + 1
 
     fun save() {
@@ -121,7 +166,6 @@ class ExpenseViewModel(
             val form = _formState.value
             val now = Clock.System.now()
 
-            // Build an Expense object for validation (used in both create and update)
             val expenseId = editingExpenseId ?: UUID.randomUUID().toString()
             val expense = Expense(
                 id = expenseId,
@@ -148,7 +192,6 @@ class ExpenseViewModel(
             _validationErrors.value = emptyList()
 
             if (editingExpenseId != null) {
-                // Update existing expense
                 val event = ExpenseEvent.ExpenseUpdated(
                     eventId = UUID.randomUUID().toString(),
                     timestamp = now,
@@ -168,7 +211,6 @@ class ExpenseViewModel(
                 eventLogRepo.append(event)
                 _saveComplete.emit(true)
             } else {
-                // Create new expense
                 val event = ExpenseEvent.ExpenseCreated(
                     eventId = UUID.randomUUID().toString(),
                     timestamp = now,

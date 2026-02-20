@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Privacy-first, offline-first travel expense tracker built with Kotlin Multiplatform (KMP). Phases 0-3 complete: shared KMP business logic + Android app with Jetpack Compose UI. See `SPEC.md` for the full v1.0 product specification.
+Privacy-first, offline-first travel expense tracker built with Kotlin Multiplatform (KMP). Phases 0-4 complete: shared KMP business logic + Android app with Jetpack Compose UI + polish features. See `SPEC.md` for the full v1.0 product specification.
 
 ## Build & Test Commands
 

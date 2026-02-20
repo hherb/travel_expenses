@@ -3,6 +3,7 @@ package com.travelexpenses.android
 import android.content.Context
 import android.os.Bundle
 import android.os.SystemClock
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -27,6 +28,7 @@ class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        updateSecureFlag()
         setContent {
             TravelExpensesTheme {
                 val securityEnabled = pinManager.isPinSet() || isBiometricEnabled()
@@ -62,8 +64,25 @@ class MainActivity : FragmentActivity() {
 
     override fun onResume() {
         super.onResume()
+        updateSecureFlag()
         if (lastActiveTime > 0L && shouldAutoLock()) {
             recreate()
+        }
+    }
+
+    /**
+     * Set FLAG_SECURE when security (PIN or biometric) is enabled.
+     * This hides the app content in the recent apps / app switcher.
+     */
+    private fun updateSecureFlag() {
+        val securityEnabled = pinManager.isPinSet() || isBiometricEnabled()
+        if (securityEnabled) {
+            window.setFlags(
+                WindowManager.LayoutParams.FLAG_SECURE,
+                WindowManager.LayoutParams.FLAG_SECURE,
+            )
+        } else {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
         }
     }
 

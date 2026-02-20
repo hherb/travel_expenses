@@ -6,6 +6,7 @@ import com.travelexpenses.currency.CurrencyConverter
 import com.travelexpenses.export.CsvExporter
 import com.travelexpenses.model.Trip
 import com.travelexpenses.model.TripId
+import com.travelexpenses.repository.CategoryRepository
 import com.travelexpenses.repository.ExpenseRepository
 import com.travelexpenses.repository.TripRepository
 import kotlinx.coroutines.flow.*
@@ -32,6 +33,7 @@ data class TripReport(
 class ReportsViewModel(
     private val tripRepo: TripRepository,
     private val expenseRepo: ExpenseRepository,
+    private val categoryRepo: CategoryRepository,
     private val currencyConverter: CurrencyConverter,
     private val csvExporter: CsvExporter,
 ) : ViewModel() {
@@ -68,6 +70,10 @@ class ReportsViewModel(
             val expenses = expenseRepo.getExpensesForTrip(tripId)
             val totalResult = currencyConverter.aggregateTripTotal(expenses, trip.baseCurrency)
 
+            // Category name lookup
+            val allCategories = categoryRepo.getAllCategories()
+            val categoryNameMap = allCategories.associate { it.id to it.name }
+
             // Category breakdown using BigDecimal for precision
             val byCategory = expenses.groupBy { it.categoryId }
             val grandTotal = totalResult.total.toBigDecimalOrNull() ?: BigDecimal.ZERO
@@ -84,7 +90,7 @@ class ReportsViewModel(
 
                 CategoryBreakdown(
                     categoryId = catId,
-                    categoryName = catId,
+                    categoryName = categoryNameMap[catId] ?: catId,
                     total = catTotal.setScale(2, RoundingMode.HALF_UP).toPlainString(),
                     count = catExpenses.size,
                     percentage = pct,

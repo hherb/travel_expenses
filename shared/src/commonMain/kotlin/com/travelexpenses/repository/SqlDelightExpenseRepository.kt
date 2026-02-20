@@ -48,6 +48,10 @@ class SqlDelightExpenseRepository(
         }
     }
 
+    override suspend fun getDistinctVendors(): List<String> = withContext(queryContext) {
+        db.materializedStateQueries.selectDistinctVendors().executeAsList().filterNotNull()
+    }
+
     override fun observeExpensesForTrip(tripId: TripId): Flow<List<Expense>> {
         return db.materializedStateQueries.selectExpensesForTrip(tripId)
             .asFlow()
