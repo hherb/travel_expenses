@@ -1,0 +1,10 @@
+{
+  "input_text": "QUICK MART\nTotal $5.99",
+  "expected": {
+    "vendor": "QUICK MART",
+    "date": null,
+    "currency": "USD",
+    "total": "5.99",
+    "tax": null
+  }
+}

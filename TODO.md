@@ -1,6 +1,6 @@
 # TODO -- Travel Expenses v1.0
 
-Status: **Phase 0 + Phase 1 complete.** 68 Android tests, 73 iOS tests, all green.
+Status: **Phase 0 + Phase 1 + Phase 2 (shared KMP logic) complete.** OCR parser, currency converter, CSV export, and business rules implemented with full test coverage.
 
 Full spec: `SPEC.md`. Build/test commands: `CLAUDE.md`. Machine paths: `LOCAL_BUILD_ENV.md`.
 
@@ -10,51 +10,44 @@ Full spec: `SPEC.md`. Build/test commands: `CLAUDE.md`. Machine paths: `LOCAL_BU
 
 - [x] **Phase 0** -- KMP coroutine + SQLDelight validation (25 tests)
 - [x] **Phase 1** -- Event types (11), materialized state (6 tables), replay engine, read-side repos, exchange rate table
+- [x] **Phase 2** -- Shared KMP business logic (OCR parser, currency converter, CSV export, validation, defaults)
+
+### Phase 2 Details
+
+#### OCR Result Parser (`shared/.../ocr/`)
+- [x] `OcrResult` data class with per-field confidence scores
+- [x] `OcrParser` with regex + heuristic extraction
+- [x] Total: pattern match "total", "amount due", "grand total", "balance due", largest number fallback
+- [x] Date: ISO, US (MM/DD/YYYY), EU (DD.MM.YYYY), written month ("Jan 15, 2026"), 2-digit year
+- [x] Vendor: top-of-receipt heuristic with address/phone filtering and stopword filtering
+- [x] Currency: explicit code detection (20 currencies) + symbol detection ($, EUR, GBP, JPY, CHF)
+- [x] Tax: "tax", "VAT", "GST", "HST", "sales tax" pattern matching
+- [x] 5 test vectors in `test-vectors/ocr/` (US restaurant, EU cafe, UK pub, ISO date, minimal)
+- [x] 30+ unit tests in `OcrParserTest`
+
+#### Currency Conversion (`shared/.../currency/`)
+- [x] `CurrencyConverter` with 4-tier rate resolution: identity, exact date, latest, inverse, static fallback
+- [x] `StaticRates` fallback table for 20 common currency pairs (cross-rate via USD)
+- [x] `computeTripTotal()` for trip summary aggregation with unconvertible expense tracking
+- [x] 13 unit tests in `CurrencyConverterTest` + 5 in `StaticRatesTest`
+
+#### CSV Export (`shared/.../export/`)
+- [x] `CsvExporter` -- one row per expense, 14 columns, UTF-8 with BOM for Excel
+- [x] Export scopes: `exportTrip()`, `exportDateRange()`, `exportAll()`
+- [x] Includes converted amounts in trip base currency via `CurrencyConverter`
+- [x] Proper CSV escaping (commas, quotes, newlines)
+- [x] 10 unit tests in `CsvExporterTest`
+
+#### Business Rules & Validation (`shared/.../validation/`)
+- [x] `ExpenseValidator` -- amount > 0, required fields, valid ISO 4217 currency (44 codes), tax validation
+- [x] `DuplicateDetector` -- heuristic detection by (amount, vendor, date) with case-insensitive vendor matching
+- [x] `DefaultCategories` -- 9 default categories per SPEC.md Section 3.2, with event generation for seeding
+- [x] 14 `ExpenseValidatorTest` + 8 `DuplicateDetectorTest` + 5 `DefaultCategoriesTest`
+- [ ] Optional Ktor HTTP client for fetching rates from frankfurter.app or exchangerate.host
 
 ---
 
 ## Remaining KMP Shared Logic
-
-### OCR Result Parser (`shared/.../ocr/`)
-Parse raw OCR text into structured expense fields. Pure Kotlin, no platform dependencies.
-
-- [ ] `OcrResult` data class (vendor, date, currency, total, tax, per-field confidence)
-- [ ] `OcrParser` with regex + heuristic extraction for each field
-- [ ] Total amount: pattern match "total", "amount due", largest number near bottom
-- [ ] Date: multi-format recognition (US, EU, ISO), locale-aware
-- [ ] Vendor: top-of-receipt text heuristic
-- [ ] Currency: symbol detection ($, EUR, etc.) or inferred from trip locale
-- [ ] Tax: pattern match "tax", "VAT", "GST" + adjacent number
-- [ ] Test vectors in `test-vectors/ocr/` (JSON fixtures)
-
-**Context:** SPEC.md Section 4.2 (OCR Pipeline), Section 7.1 (test vector format)
-
-### Currency Conversion (`shared/.../currency/`)
-Display-only conversion using cached exchange rates.
-
-- [ ] `CurrencyConverter` -- convert amount between currencies using `ExchangeRateRepository`
-- [ ] Trip summary aggregation: total spend in base currency
-- [ ] Fallback: static rate table for common pairs when no API/manual rate available
-- [ ] Optional Ktor HTTP client for fetching rates from frankfurter.app or exchangerate.host
-
-**Context:** SPEC.md Section 4.4, `ExchangeRateRepository` (already implemented), `ExchangeRate.sq`
-
-### CSV Export (`shared/.../export/`)
-Generate CSV reports from materialized state.
-
-- [ ] `CsvExporter` -- one row per expense, all fields, UTF-8 with BOM for Excel
-- [ ] Export scopes: single trip, date range, all data
-- [ ] Include converted amounts in trip base currency (display column)
-- [ ] Test vectors in `test-vectors/export/`
-
-**Context:** SPEC.md Section 4.5
-
-### Business Rules & Validation (`shared/.../model/` or `shared/.../validation/`)
-- [ ] Expense validation (amount > 0, required fields, valid currency code)
-- [ ] Duplicate detection heuristic (same amount + vendor + date within threshold)
-- [ ] Default category seeding (see SPEC.md Section 3.2 for the 10 default categories)
-
-**Context:** SPEC.md Section 3.2 (default categories), Section 2.2 (shared module boundary)
 
 ### Sync Foundation (`shared/.../sync/`)
 Local backup/restore via event log archive (v1 scope, no cloud).
@@ -126,14 +119,10 @@ Local backup/restore via event log archive (v1 scope, no cloud).
 
 ---
 
-## Suggested Build Order
+## Suggested Build Order (remaining)
 
-1. **OCR parser** -- pure KMP, no platform deps, TDD with test vectors
-2. **Currency converter** -- builds on existing `ExchangeRateRepository`
-3. **CSV export** -- builds on existing read-side repositories
-4. **Business rules** -- validation, defaults, duplicate detection
-5. **Android app skeleton** -- DI, navigation, basic screens
-6. **iOS app skeleton** -- DI, navigation, basic screens
-7. **Platform OCR wiring** -- connect ML Kit / Vision to KMP parser
-8. **Security** -- biometric/PIN on each platform
-9. **Sync foundation** -- backup/restore archive
+1. **Sync foundation** -- backup/restore archive
+2. **Android app skeleton** -- DI, navigation, basic screens
+3. **iOS app skeleton** -- DI, navigation, basic screens
+4. **Platform OCR wiring** -- connect ML Kit / Vision to KMP parser
+5. **Security** -- biometric/PIN on each platform

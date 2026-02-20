@@ -1,0 +1,10 @@
+{
+  "input_text": "DOWNTOWN GRILL\n123 Main St\nDate: 03/15/2026\n\nBurger  $12.50\nBeer     $8.00\nSubtotal $20.50\nTax       $1.74\nTotal    $22.24\nThank you!",
+  "expected": {
+    "vendor": "DOWNTOWN GRILL",
+    "date": "2026-03-15",
+    "currency": "USD",
+    "total": "22.24",
+    "tax": "1.74"
+  }
+}

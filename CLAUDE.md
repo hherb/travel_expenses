@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Privacy-first, offline-first travel expense tracker built with Kotlin Multiplatform (KMP). Currently in **Phase 0**: TDD validation of KMP coroutines + SQLDelight on Android and iOS — no UI yet. See `SPEC.md` for the full v1.0 product specification.
+Privacy-first, offline-first travel expense tracker built with Kotlin Multiplatform (KMP). Currently in **Phase 2**: shared KMP business logic complete (OCR parser, currency converter, CSV export, validation). No UI yet. See `SPEC.md` for the full v1.0 product specification.
 
 ## Build & Test Commands
 
@@ -38,8 +38,12 @@ All business logic lives in `shared/src/commonMain/`. Platform-specific code use
 ```
 commonMain/kotlin/com/travelexpenses/
 ├── model/          # Domain types: Expense, Trip (type-safe ID wrappers, String-encoded decimals)
-├── event/          # Append-only event log: ExpenseEvent sealed class (ExpenseCreated, ExpenseDeleted, TripCreated, TripArchived)
-└── repository/     # EventLogRepository interface + SqlDelightEventLogRepository implementation
+├── event/          # Append-only event log: ExpenseEvent sealed class + EventReplayEngine
+├── repository/     # EventLogRepository, ExpenseRepository, TripRepository, CategoryRepository, ExchangeRateRepository
+├── ocr/            # OcrResult + OcrParser: regex/heuristic receipt text extraction
+├── currency/       # CurrencyConverter (4-tier rate resolution) + StaticRates fallback
+├── export/         # CsvExporter: UTF-8 BOM CSV with trip/date-range/all scopes
+└── validation/     # ExpenseValidator, DuplicateDetector, DefaultCategories (9 defaults)
 ```
 
 ### Key Design Decisions
@@ -59,7 +63,10 @@ commonMain/kotlin/com/travelexpenses/
 
 ### SQLDelight Schema
 
-Single table `event_log` defined in `shared/src/commonMain/sqldelight/com/travelexpenses/EventLog.sq`. Generated code provides type-safe queries for insert, select by device/type, count, and delete operations.
+Three `.sq` files in `shared/src/commonMain/sqldelight/com/travelexpenses/db/`:
+- `EventLog.sq` — append-only event log (source of truth)
+- `MaterializedState.sq` — 6 read-side tables (trip, category, tag, expense, expense_tag, receipt_image)
+- `ExchangeRate.sq` — cached exchange rates (from_currency, to_currency, date)
 
 ## Testing Conventions
 

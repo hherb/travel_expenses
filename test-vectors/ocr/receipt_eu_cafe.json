@@ -1,0 +1,10 @@
+{
+  "input_text": "CAFE EUROPA\nHauptstr. 42\nBerlin\n15.03.2026\n\nKaffee       2,50\nKuchen       3,80\nZwischensumme 6,30\nMwSt          1,20\nGesamt EUR    7,50\nDanke!",
+  "expected": {
+    "vendor": "CAFE EUROPA",
+    "date": "2026-03-15",
+    "currency": "EUR",
+    "total": "7.50",
+    "tax": null
+  }
+}

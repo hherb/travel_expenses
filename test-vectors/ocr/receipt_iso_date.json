@@ -1,0 +1,10 @@
+{
+  "input_text": "AIRPORT DUTY FREE\nTerminal 2\n2026-01-20\n\nChocolate    $15.99\nPerfume      $45.00\nTotal        $60.99",
+  "expected": {
+    "vendor": "AIRPORT DUTY FREE",
+    "date": "2026-01-20",
+    "currency": "USD",
+    "total": "60.99",
+    "tax": null
+  }
+}
