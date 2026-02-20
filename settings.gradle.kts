@@ -15,3 +15,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "TravelExpenses"
 include(":shared")
+include(":android:app")
