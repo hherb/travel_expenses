@@ -3,7 +3,6 @@ package com.travelexpenses.export
 import com.travelexpenses.currency.CurrencyConverter
 import com.travelexpenses.currency.ExpenseAmount
 import com.travelexpenses.model.Expense
-import com.travelexpenses.model.Tag
 import com.travelexpenses.model.TripId
 import com.travelexpenses.repository.ExpenseRepository
 import com.travelexpenses.repository.TripRepository
@@ -80,8 +79,9 @@ class CsvExporter(
         expenses: List<Expense>,
         baseCurrency: String?,
     ): String {
-        // Pre-load categories for lookups
+        // Pre-load categories and trips for lookups (avoids N+1 queries)
         val categories = categoryRepository.getAllCategories().associateBy { it.id }
+        val tripCache = mutableMapOf<TripId, String>()
 
         val rows = expenses.map { expense ->
             val tags = expenseRepository.getTagsForExpense(expense.id)
@@ -98,9 +98,10 @@ class CsvExporter(
                 null
             }
 
-            // Look up trip name
-            val trip = tripRepository.getTrip(expense.tripId)
-            val tripName = trip?.name ?: expense.tripId
+            // Look up trip name (cached to avoid repeated queries)
+            val tripName = tripCache.getOrPut(expense.tripId) {
+                tripRepository.getTrip(expense.tripId)?.name ?: expense.tripId
+            }
 
             listOf(
                 expense.id,
@@ -123,6 +124,9 @@ class CsvExporter(
         return buildCsv(rows)
     }
 
+    /**
+     * Build a CSV string from rows of field values, prepended with a UTF-8 BOM and the header row.
+     */
     internal fun buildCsv(rows: List<List<String>>): String {
         val sb = StringBuilder()
         sb.append(UTF8_BOM)
@@ -133,6 +137,7 @@ class CsvExporter(
         return sb.toString()
     }
 
+    /** Escape a CSV field value, quoting it if it contains commas, double quotes, or newlines. */
     internal fun escapeCsvField(field: String): String {
         return if (field.contains(',') || field.contains('"') || field.contains('\n')) {
             "\"${field.replace("\"", "\"\"")}\""

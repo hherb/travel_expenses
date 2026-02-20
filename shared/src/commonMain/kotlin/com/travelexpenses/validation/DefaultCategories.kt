@@ -1,6 +1,8 @@
 package com.travelexpenses.validation
 
+import com.travelexpenses.event.ExpenseEvent
 import com.travelexpenses.model.Category
+import kotlinx.datetime.Instant
 
 /**
  * Default categories shipped with the app (see SPEC.md Section 3.2).
@@ -28,10 +30,10 @@ object DefaultCategories {
         deviceId: String,
         sequenceNumberStart: Long,
         eventIdGenerator: () -> String,
-        timestampProvider: () -> kotlinx.datetime.Instant,
-    ): List<com.travelexpenses.event.ExpenseEvent.CategoryCreated> {
+        timestampProvider: () -> Instant,
+    ): List<ExpenseEvent.CategoryCreated> {
         return ALL.mapIndexed { index, category ->
-            com.travelexpenses.event.ExpenseEvent.CategoryCreated(
+            ExpenseEvent.CategoryCreated(
                 eventId = eventIdGenerator(),
                 timestamp = timestampProvider(),
                 sequenceNumber = sequenceNumberStart + index,

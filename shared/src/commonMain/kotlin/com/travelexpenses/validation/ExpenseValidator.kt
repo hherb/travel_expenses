@@ -18,6 +18,13 @@ object ExpenseValidator {
         "CLP", "COP", "PEN", "ARS",
     )
 
+    /**
+     * Validate an expense and return all detected validation errors.
+     * An empty list means the expense is valid.
+     *
+     * @param expense The expense to validate.
+     * @return List of [ValidationError] entries; empty if valid.
+     */
     fun validate(expense: Expense): List<ValidationError> {
         val errors = mutableListOf<ValidationError>()
 
@@ -59,6 +66,7 @@ object ExpenseValidator {
         return errors
     }
 
+    /** Convenience check: returns `true` if the expense passes all validation rules. */
     fun isValid(expense: Expense): Boolean = validate(expense).isEmpty()
 }
 

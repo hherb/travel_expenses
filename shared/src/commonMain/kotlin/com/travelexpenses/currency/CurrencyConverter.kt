@@ -1,6 +1,7 @@
 package com.travelexpenses.currency
 
 import com.travelexpenses.repository.ExchangeRateRepository
+import kotlin.math.round
 import kotlinx.datetime.LocalDate
 
 /**
@@ -64,7 +65,6 @@ class CurrencyConverter(
         }
 
         // Try inverse rate (e.g., if we have EUR->USD but need USD->EUR)
-        val inverseKey = toCurrency to fromCurrency
         val inverseRate = if (date != null) {
             exchangeRateRepository.getRate(toCurrency, fromCurrency, date)
         } else null
@@ -141,7 +141,7 @@ class CurrencyConverter(
 
     private fun formatAmount(value: Double): String {
         // Round to 2 decimal places for monetary display
-        val rounded = kotlin.math.round(value * 100.0) / 100.0
+        val rounded = round(value * 100.0) / 100.0
         return if (rounded == rounded.toLong().toDouble()) {
             "${rounded.toLong()}.00"
         } else {
@@ -162,26 +162,35 @@ class CurrencyConverter(
     }
 }
 
+/** Result of a single currency conversion, including the applied rate and its source. */
 data class ConversionResult(
     val convertedAmount: String,
     val rate: String,
     val source: RateSource,
 )
 
+/** Describes where a conversion rate was obtained from, in priority order. */
 enum class RateSource {
+    /** Same currency — no conversion needed. */
     IDENTITY,
+    /** Exact-date rate from the exchange rate repository. */
     EXACT_DATE,
+    /** Most recent rate from the exchange rate repository (date-agnostic). */
     LATEST,
+    /** Computed as 1/rate from the reverse currency pair. */
     INVERSE,
+    /** Approximate rate from the built-in [StaticRates] table. */
     STATIC_FALLBACK,
 }
 
+/** Lightweight representation of an expense's monetary value for aggregation. */
 data class ExpenseAmount(
     val amount: String,
     val currency: String,
     val date: LocalDate? = null,
 )
 
+/** Aggregated trip total in a single base currency, with any unconvertible expenses listed separately. */
 data class TripTotalResult(
     val total: String,
     val baseCurrency: String,

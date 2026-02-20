@@ -60,6 +60,10 @@ private data class DuplicateKey(
     val date: String,
 )
 
+/**
+ * A group of 2+ expenses that share the same (amount, vendor, date)
+ * and are flagged as potential duplicates.
+ */
 data class DuplicateGroup(
     val amount: String,
     val vendor: String,

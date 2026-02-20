@@ -13,6 +13,34 @@ package com.travelexpenses.ocr
  */
 object OcrParser {
 
+    // -- Confidence constants --
+
+    private const val CONFIDENCE_TOTAL_LABELED = 0.9f
+    private const val CONFIDENCE_TOTAL_FALLBACK = 0.5f
+    private const val CONFIDENCE_TAX = 0.8f
+    private const val CONFIDENCE_DATE_ISO = 0.95f
+    private const val CONFIDENCE_DATE_WRITTEN = 0.9f
+    private const val CONFIDENCE_DATE_LABELED = 0.85f
+    private const val CONFIDENCE_DATE_UNLABELED = 0.6f
+    private const val CONFIDENCE_CURRENCY_CODE = 0.9f
+    private const val CONFIDENCE_CURRENCY_SYMBOL = 0.8f
+    private const val CONFIDENCE_CURRENCY_DOLLAR = 0.6f
+    private const val CONFIDENCE_VENDOR_FIRST_LINE = 0.7f
+    private const val CONFIDENCE_VENDOR_SUBSEQUENT = 0.5f
+    private const val CONFIDENCE_VENDOR_FALLBACK = 0.3f
+
+    /** Number of lines from the top to inspect for vendor name. */
+    private const val VENDOR_SCAN_LINES = 5
+
+    /** Minimum word length to be considered meaningful for vendor detection. */
+    private const val MIN_MEANINGFUL_WORD_LENGTH = 2
+
+    /**
+     * Parse raw OCR text and extract structured expense fields.
+     *
+     * @param rawText The raw text output from an OCR engine.
+     * @return An [OcrResult] with extracted fields and per-field confidence scores.
+     */
     fun parse(rawText: String): OcrResult {
         if (rawText.isBlank()) return OcrResult()
 
@@ -25,17 +53,17 @@ object OcrParser {
         val vendorResult = extractVendor(lines)
 
         return OcrResult(
-            vendor = vendorResult.first,
-            date = dateResult.first,
-            currency = currencyResult.first,
-            total = totalResult.first,
-            tax = taxResult.first,
+            vendor = vendorResult.value,
+            date = dateResult.value,
+            currency = currencyResult.value,
+            total = totalResult.value,
+            tax = taxResult.value,
             confidence = FieldConfidence(
-                vendor = vendorResult.second,
-                date = dateResult.second,
-                currency = currencyResult.second,
-                total = totalResult.second,
-                tax = taxResult.second,
+                vendor = vendorResult.confidence,
+                date = dateResult.confidence,
+                currency = currencyResult.confidence,
+                total = totalResult.confidence,
+                tax = taxResult.confidence,
             ),
         )
     }
@@ -47,14 +75,18 @@ object OcrParser {
         Regex("""(?i)\b(?:total|total\s+due|amount\s+due|grand\s+total|balance\s+due)\s*[:\s]?\s*[$\u20AC\u00A3]?\s*(\d{1,9})\b"""),
     )
 
-    internal fun extractTotal(lines: List<String>): Pair<String?, Float?> {
+    /**
+     * Extract the total amount from receipt lines.
+     * Searches from bottom up since the grand total typically appears near the bottom.
+     */
+    internal fun extractTotal(lines: List<String>): ExtractionResult {
         // Search from bottom up -- "total" near the bottom is more likely to be the grand total
         for (line in lines.reversed()) {
             for (pattern in totalPatterns) {
                 val match = pattern.find(line)
                 if (match != null) {
                     val amount = normalizeAmount(match.groupValues[1])
-                    return amount to 0.9f
+                    return ExtractionResult(amount, CONFIDENCE_TOTAL_LABELED)
                 }
             }
         }
@@ -72,11 +104,11 @@ object OcrParser {
         if (amounts.isNotEmpty()) {
             val largest = amounts.maxByOrNull { it.first.toDoubleOrNull() ?: 0.0 }
             if (largest != null) {
-                return largest.first to 0.5f
+                return ExtractionResult(largest.first, CONFIDENCE_TOTAL_FALLBACK)
             }
         }
 
-        return null to null
+        return ExtractionResult.EMPTY
     }
 
     // -- Tax extraction --
@@ -86,28 +118,33 @@ object OcrParser {
         Regex("""(?i)[$\u20AC\u00A3]?\s*(\d{1,9}[.,]\d{2})\s*(?:tax|vat|gst|hst)"""),
     )
 
-    internal fun extractTax(lines: List<String>): Pair<String?, Float?> {
+    /**
+     * Extract tax amount from receipt lines.
+     * Matches "tax", "VAT", "GST", "HST", "sales tax" followed by a monetary amount.
+     */
+    internal fun extractTax(lines: List<String>): ExtractionResult {
         for (line in lines) {
             for (pattern in taxPatterns) {
                 val match = pattern.find(line)
                 if (match != null) {
                     val amount = normalizeAmount(match.groupValues[1])
-                    return amount to 0.8f
+                    return ExtractionResult(amount, CONFIDENCE_TAX)
                 }
             }
         }
-        return null to null
+        return ExtractionResult.EMPTY
     }
 
     // -- Date extraction --
 
-    // US format: MM/DD/YYYY or MM-DD-YYYY
+    /** US format: MM/DD/YYYY or MM-DD-YYYY. */
     private val usDatePattern = Regex("""(\d{1,2})[/\-](\d{1,2})[/\-](20\d{2}|\d{2})""")
-    // EU format: DD.MM.YYYY
+    /** EU format: DD.MM.YYYY. */
     private val euDatePattern = Regex("""(\d{1,2})\.(\d{1,2})\.(20\d{2}|\d{2})""")
-    // ISO format: YYYY-MM-DD
+    /** ISO 8601 format: YYYY-MM-DD. */
     private val isoDatePattern = Regex("""(20\d{2})-(\d{1,2})-(\d{1,2})""")
-    // Written month: Jan 15, 2026 / 15 Jan 2026 / January 15, 2026
+
+    /** Mapping of English month names/abbreviations to month numbers (1-12). */
     private val monthNames = mapOf(
         "jan" to 1, "january" to 1, "feb" to 2, "february" to 2,
         "mar" to 3, "march" to 3, "apr" to 4, "april" to 4,
@@ -116,21 +153,28 @@ object OcrParser {
         "sep" to 9, "september" to 9, "oct" to 10, "october" to 10,
         "nov" to 11, "november" to 11, "dec" to 12, "december" to 12,
     )
+
+    /** Written month format: "Jan 15, 2026" or "January 15, 2026". */
     private val writtenDatePattern1 = Regex(
         """(?i)(${monthNames.keys.joinToString("|")})\s+(\d{1,2}),?\s+(20\d{2}|\d{2})"""
     )
+    /** Written month format: "15 Jan 2026". */
     private val writtenDatePattern2 = Regex(
         """(?i)(\d{1,2})\s+(${monthNames.keys.joinToString("|")})\s+(20\d{2}|\d{2})"""
     )
 
-    internal fun extractDate(text: String): Pair<String?, Float?> {
+    /**
+     * Extract a date from OCR text, trying multiple formats in priority order:
+     * ISO > written month > labeled ("Date: ...") > unlabeled US/EU.
+     */
+    internal fun extractDate(text: String): ExtractionResult {
         // ISO format -- highest confidence
         isoDatePattern.find(text)?.let { match ->
             val year = match.groupValues[1].toInt()
             val month = match.groupValues[2].toInt()
             val day = match.groupValues[3].toInt()
             if (isValidDate(year, month, day)) {
-                return formatDate(year, month, day) to 0.95f
+                return ExtractionResult(formatDate(year, month, day), CONFIDENCE_DATE_ISO)
             }
         }
 
@@ -141,7 +185,7 @@ object OcrParser {
             val day = match.groupValues[2].toInt()
             val year = normalizeYear(match.groupValues[3].toInt())
             if (month != null && isValidDate(year, month, day)) {
-                return formatDate(year, month, day) to 0.9f
+                return ExtractionResult(formatDate(year, month, day), CONFIDENCE_DATE_WRITTEN)
             }
         }
 
@@ -152,7 +196,7 @@ object OcrParser {
             val month = monthNames[monthStr]
             val year = normalizeYear(match.groupValues[3].toInt())
             if (month != null && isValidDate(year, month, day)) {
-                return formatDate(year, month, day) to 0.9f
+                return ExtractionResult(formatDate(year, month, day), CONFIDENCE_DATE_WRITTEN)
             }
         }
 
@@ -163,30 +207,33 @@ object OcrParser {
             if (labelMatch != null) {
                 val datePart = labelMatch.groupValues[1].trim()
                 val parsed = parseDateFragment(datePart)
-                if (parsed != null) return parsed to 0.85f
+                if (parsed != null) return ExtractionResult(parsed, CONFIDENCE_DATE_LABELED)
             }
         }
 
         // Unlabeled date patterns
         val parsed = parseDateFragment(text)
-        if (parsed != null) return parsed to 0.6f
+        if (parsed != null) return ExtractionResult(parsed, CONFIDENCE_DATE_UNLABELED)
 
-        return null to null
+        return ExtractionResult.EMPTY
     }
 
+    /**
+     * Attempt to parse a date from a text fragment using US then EU format.
+     * @return ISO 8601 date string, or null if no valid date found.
+     */
     private fun parseDateFragment(text: String): String? {
-        // US format
+        // US format: MM/DD/YYYY
         usDatePattern.find(text)?.let { match ->
-            val a = match.groupValues[1].toInt()
-            val b = match.groupValues[2].toInt()
+            val month = match.groupValues[1].toInt()
+            val day = match.groupValues[2].toInt()
             val year = normalizeYear(match.groupValues[3].toInt())
-            // US: MM/DD/YYYY
-            if (isValidDate(year, a, b)) {
-                return formatDate(year, a, b)
+            if (isValidDate(year, month, day)) {
+                return formatDate(year, month, day)
             }
         }
 
-        // EU format
+        // EU format: DD.MM.YYYY
         euDatePattern.find(text)?.let { match ->
             val day = match.groupValues[1].toInt()
             val month = match.groupValues[2].toInt()
@@ -201,34 +248,38 @@ object OcrParser {
 
     // -- Currency extraction --
 
-    private data class CurrencyMatch(val code: String, val confidence: Float)
-
+    /** Mapping of currency symbols to ISO 4217 codes. */
     private val currencySymbols = mapOf(
         "$" to "USD",
-        "\u20AC" to "EUR",   // Euro sign
-        "\u00A3" to "GBP",   // Pound sign
-        "\u00A5" to "JPY",   // Yen sign
+        "\u20AC" to "EUR",   // Euro sign €
+        "\u00A3" to "GBP",   // Pound sign £
+        "\u00A5" to "JPY",   // Yen sign ¥
         "CHF" to "CHF",
     )
 
+    /** Pattern for explicit ISO 4217 currency codes in text. */
     private val currencyCodePattern = Regex("""(?i)\b(USD|EUR|GBP|JPY|CHF|CAD|AUD|NZD|SEK|NOK|DKK|CNY|HKD|SGD|KRW|INR|BRL|MXN|ZAR|THB)\b""")
 
-    internal fun extractCurrency(text: String): Pair<String?, Float?> {
+    /**
+     * Extract currency from text by explicit ISO code or symbol detection.
+     * Explicit codes have higher confidence than symbol-based inference.
+     */
+    internal fun extractCurrency(text: String): ExtractionResult {
         // Explicit currency code -- highest confidence
         currencyCodePattern.find(text)?.let { match ->
-            return match.groupValues[1].uppercase() to 0.9f
+            return ExtractionResult(match.groupValues[1].uppercase(), CONFIDENCE_CURRENCY_CODE)
         }
 
         // Symbol detection
         for ((symbol, code) in currencySymbols) {
             if (text.contains(symbol)) {
                 // $ is ambiguous -- could be USD, CAD, AUD, etc.
-                val confidence = if (symbol == "$") 0.6f else 0.8f
-                return code to confidence
+                val confidence = if (symbol == "$") CONFIDENCE_CURRENCY_DOLLAR else CONFIDENCE_CURRENCY_SYMBOL
+                return ExtractionResult(code, confidence)
             }
         }
 
-        return null to null
+        return ExtractionResult.EMPTY
     }
 
     // -- Vendor extraction --
@@ -241,15 +292,16 @@ object OcrParser {
         "tel", "phone", "fax", "www", "http", "email",
     )
 
-    internal fun extractVendor(lines: List<String>): Pair<String?, Float?> {
-        // Heuristic: the vendor name is typically in the first few non-empty lines,
-        // often the first line or the largest text block near the top.
+    /**
+     * Extract vendor name from the first few lines of receipt text.
+     * Filters out addresses, phone numbers, dates, and decorative lines.
+     */
+    internal fun extractVendor(lines: List<String>): ExtractionResult {
         val candidates = lines
-            .take(5)
+            .take(VENDOR_SCAN_LINES)
             .map { it.trim() }
             .filter { it.isNotBlank() }
             .filter { line ->
-                // Filter out lines that are clearly addresses, phone numbers, dates, etc.
                 !line.matches(Regex("""^\d[\d\s\-().]+$""")) && // phone numbers
                 !line.matches(Regex("""^\d+\s+\w+\s+(St|Ave|Rd|Blvd|Dr|Ln|Ct|Way|Pl|Pkwy|Hwy)\.?.*""", RegexOption.IGNORE_CASE)) && // addresses
                 !usDatePattern.containsMatchIn(line) &&
@@ -257,33 +309,34 @@ object OcrParser {
                 !line.matches(Regex("""^[#\-=*]+$""")) // decorative lines
             }
 
-        if (candidates.isEmpty()) return null to null
+        if (candidates.isEmpty()) return ExtractionResult.EMPTY
 
         // Pick the first candidate that has at least one word not in stopwords
         for (candidate in candidates) {
             val words = candidate.lowercase().split(Regex("""\s+"""))
-            val meaningful = words.any { it !in vendorStopwords && it.length > 1 }
+            val meaningful = words.any { it !in vendorStopwords && it.length >= MIN_MEANINGFUL_WORD_LENGTH }
             if (meaningful) {
-                // Confidence: higher if it's the first line
-                val confidence = if (candidate == candidates.first()) 0.7f else 0.5f
-                return candidate to confidence
+                val confidence = if (candidate == candidates.first()) CONFIDENCE_VENDOR_FIRST_LINE else CONFIDENCE_VENDOR_SUBSEQUENT
+                return ExtractionResult(candidate, confidence)
             }
         }
 
-        return candidates.first() to 0.3f
+        return ExtractionResult(candidates.first(), CONFIDENCE_VENDOR_FALLBACK)
     }
 
     // -- Utilities --
 
+    /** Replace comma decimal separators with dots for consistent parsing. */
     private fun normalizeAmount(raw: String): String {
-        // Replace comma decimal separator with dot
         return raw.replace(',', '.')
     }
 
+    /** Convert 2-digit years to 4-digit (assumes 2000s). */
     private fun normalizeYear(year: Int): Int {
         return if (year < 100) 2000 + year else year
     }
 
+    /** Validate a date against calendar rules including leap years. */
     private fun isValidDate(year: Int, month: Int, day: Int): Boolean {
         if (month < 1 || month > 12) return false
         if (day < 1 || day > 31) return false
@@ -296,7 +349,22 @@ object OcrParser {
         return day <= maxDays
     }
 
+    /** Format a date as ISO 8601 (yyyy-MM-dd). */
     private fun formatDate(year: Int, month: Int, day: Int): String {
         return "$year-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}"
+    }
+}
+
+/**
+ * Result of a single field extraction attempt.
+ * Contains the extracted value (or null) and its confidence score (or null).
+ */
+data class ExtractionResult(
+    val value: String?,
+    val confidence: Float?,
+) {
+    companion object {
+        /** Empty result indicating no extraction was possible. */
+        val EMPTY = ExtractionResult(null, null)
     }
 }
