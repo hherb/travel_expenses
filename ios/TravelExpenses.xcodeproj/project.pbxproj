@@ -32,6 +32,7 @@
 		AA000030 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AB000030 /* Assets.xcassets */; };
 		AA000031 /* Shared.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = AB000031 /* Shared.xcframework */; };
 		AA000032 /* Shared.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = AB000031 /* Shared.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		AA000033 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = AB000032 /* libsqlite3.tbd */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -75,6 +76,7 @@
 		AB000031 /* Shared.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = Shared.xcframework; path = "../shared/build/XCFrameworks/release/Shared.xcframework"; sourceTree = "<group>"; };
 		AB000040 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AB000050 /* TravelExpenses.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TravelExpenses.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AB000032 /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -83,6 +85,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA000031 /* Shared.xcframework in Frameworks */,
+				AA000033 /* libsqlite3.tbd in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -213,6 +216,7 @@
 			isa = PBXGroup;
 			children = (
 				AB000031 /* Shared.xcframework */,
+				AB000032 /* libsqlite3.tbd */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -448,6 +452,10 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/../shared/build/XCFrameworks/release",
+				);
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = TravelExpenses/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -473,6 +481,10 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/../shared/build/XCFrameworks/release",
+				);
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = TravelExpenses/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;

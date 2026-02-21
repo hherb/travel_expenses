@@ -10,7 +10,7 @@ final class OcrViewModel: ObservableObject {
     @Published var vendor: String = ""
     @Published var amount: String = ""
     @Published var currency: String = ""
-    @Published var date: Kotlinx_datetimeLocalDate?
+    @Published var date: String?
     @Published var taxAmount: String = ""
     @Published var confidence: Float? = nil
     @Published var errorMessage: String?
@@ -39,14 +39,14 @@ final class OcrViewModel: ObservableObject {
                 }
 
                 // Parse structured fields from raw OCR text via KMP OcrParser
-                let result = ocrParser.parse(textResult: textResult)
+                let result = ocrParser.parse(rawText: textResult.fullText)
 
                 vendor     = result.vendor ?? ""
                 amount     = result.total  ?? ""
                 currency   = result.currency ?? ""
                 taxAmount  = result.tax    ?? ""
                 date       = result.date
-                confidence = result.totalConfidence?.floatValue
+                confidence = result.totalConfidence
 
                 processingComplete = true
             } catch {

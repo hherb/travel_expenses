@@ -7,9 +7,7 @@ struct ExpenseFormState {
     var currency: String = "USD"
     var categoryId: String = ""
     var vendor: String = ""
-    var date: Kotlinx_datetimeLocalDate = Kotlinx_datetimeClock.companion.System.todayIn(
-        timeZone: Kotlinx_datetimeTimeZone.companion.currentSystemDefault()
-    )
+    var date: Kotlinx_datetimeLocalDate = DateTimeHelpers.shared.todayLocal()
     var notes: String = ""
     var taxAmount: String = ""
     var tripId: String = ""
@@ -21,7 +19,7 @@ struct ExpenseFormState {
 final class ExpenseViewModel: ObservableObject {
 
     @Published var formState: ExpenseFormState = ExpenseFormState()
-    @Published var categories: [Category] = []
+    @Published var categories: [Shared.Category] = []
     @Published var tags: [Tag] = []
     @Published var vendorSuggestions: [String] = []
     @Published var validationErrors: [String] = []
@@ -99,7 +97,7 @@ final class ExpenseViewModel: ObservableObject {
                 return
             }
 
-            let now = Kotlinx_datetimeClock.companion.System.now()
+            let now = DateTimeHelpers.shared.now()
             let expense = Expense(
                 id: editingExpenseId ?? UUID().uuidString,
                 tripId: form.tripId,
@@ -125,7 +123,7 @@ final class ExpenseViewModel: ObservableObject {
             validationErrors = []
 
             do {
-                let seqNum = try await eventLogRepo.count() + 1
+                let seqNum = (try await eventLogRepo.count()).int64Value + 1
                 let event: ExpenseEvent
 
                 if let existingId = editingExpenseId {
@@ -166,8 +164,8 @@ final class ExpenseViewModel: ObservableObject {
     func createTag(label: String) {
         Task {
             do {
-                let seqNum = try await eventLogRepo.count() + 1
-                let now = Kotlinx_datetimeClock.companion.System.now()
+                let seqNum = (try await eventLogRepo.count()).int64Value + 1
+                let now = DateTimeHelpers.shared.now()
                 let tagId = UUID().uuidString
                 let event = ExpenseEvent.TagCreated(
                     eventId: UUID().uuidString,
@@ -200,7 +198,7 @@ final class ExpenseViewModel: ObservableObject {
         self.categoryBridge = bridge
         bridge.collectAll(
             onEach: { [weak self] cats in
-                Task { @MainActor in self?.categories = cats as? [Category] ?? [] }
+                Task { @MainActor in self?.categories = cats as? [Shared.Category] ?? [] }
             },
             onError: { _ in }
         )

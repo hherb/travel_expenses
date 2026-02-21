@@ -54,7 +54,7 @@ final class SettingsViewModel: ObservableObject {
             defer { isLoading = false }
             do {
                 let archive = try await syncManager.exportArchive()
-                let json = EventArchiveSerializer.companion.serialize(archive: archive)
+                let json = EventArchiveSerializer.shared.serialize(archive: archive)
                 exportedArchive = IdentifiableString(value: json)
             } catch {
                 errorMessage = error.localizedDescription
@@ -67,7 +67,7 @@ final class SettingsViewModel: ObservableObject {
             isLoading = true
             defer { isLoading = false }
             do {
-                let archive = try EventArchiveSerializer.companion.deserialize(json: json)
+                let archive = try EventArchiveSerializer.shared.deserialize(jsonString: json)
                 try await syncManager.importArchive(archive: archive)
                 importResult = "Import complete (\(archive.eventCount) events)"
             } catch {

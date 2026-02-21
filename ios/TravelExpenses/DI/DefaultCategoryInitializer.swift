@@ -22,12 +22,12 @@ final class DefaultCategoryInitializer {
                 let existing = try await categoryRepo.getAllCategories()
                 guard existing.isEmpty else { return }
 
-                let now = Kotlinx_datetimeClock.companion.System.now()
+                let now = DateTimeHelpers.shared.now()
                 let defaults = DefaultCategories.shared.all
                 let baseSeqNum = try await eventLogRepo.count()
 
                 for (index, category) in defaults.enumerated() {
-                    let seqNum = baseSeqNum + Int64(index + 1)
+                    let seqNum = baseSeqNum.int64Value + Int64(index + 1)
                     let event = ExpenseEvent.CategoryCreated(
                         eventId: UUID().uuidString,
                         timestamp: now,

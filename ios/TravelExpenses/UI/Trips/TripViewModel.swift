@@ -50,7 +50,7 @@ final class TripViewModel: ObservableObject {
                 }
             },
             onError: { [weak self] error in
-                Task { @MainActor in self?.errorMessage = error.localizedDescription }
+                Task { @MainActor in self?.errorMessage = error.message ?? "Unknown error" }
             }
         )
 
@@ -76,8 +76,8 @@ final class TripViewModel: ObservableObject {
     ) {
         Task {
             do {
-                let seqNum = try await eventLogRepo.count() + 1
-                let now = Kotlinx_datetimeClock.companion.System.now()
+                let seqNum = (try await eventLogRepo.count()).int64Value + 1
+                let now = DateTimeHelpers.shared.now()
                 let trip = Trip(
                     id: UUID().uuidString,
                     name: name,
@@ -85,7 +85,8 @@ final class TripViewModel: ObservableObject {
                     startDate: startDate,
                     endDate: endDate,
                     baseCurrency: baseCurrency,
-                    createdAt: now
+                    createdAt: now,
+                    isArchived: false
                 )
                 let event = ExpenseEvent.TripCreated(
                     eventId: UUID().uuidString,
@@ -104,8 +105,8 @@ final class TripViewModel: ObservableObject {
     func archiveTrip(_ tripId: String) {
         Task {
             do {
-                let seqNum = try await eventLogRepo.count() + 1
-                let now = Kotlinx_datetimeClock.companion.System.now()
+                let seqNum = (try await eventLogRepo.count()).int64Value + 1
+                let now = DateTimeHelpers.shared.now()
                 let event = ExpenseEvent.TripArchived(
                     eventId: UUID().uuidString,
                     timestamp: now,
@@ -151,8 +152,8 @@ final class TripViewModel: ObservableObject {
     func deleteExpense(_ expenseId: String) {
         Task {
             do {
-                let seqNum = try await eventLogRepo.count() + 1
-                let now = Kotlinx_datetimeClock.companion.System.now()
+                let seqNum = (try await eventLogRepo.count()).int64Value + 1
+                let now = DateTimeHelpers.shared.now()
                 let event = ExpenseEvent.ExpenseDeleted(
                     eventId: UUID().uuidString,
                     timestamp: now,

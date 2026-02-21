@@ -41,7 +41,7 @@ struct OcrReviewView: View {
                 ocrAmount: ocrViewModel.amount,
                 ocrCurrency: ocrViewModel.currency.isEmpty ? "USD" : ocrViewModel.currency,
                 ocrVendor: ocrViewModel.vendor,
-                ocrDate: ocrViewModel.date,
+                ocrDate: Self.parseDate(ocrViewModel.date),
                 ocrTaxAmount: ocrViewModel.taxAmount.isEmpty ? nil : ocrViewModel.taxAmount,
                 ocrConfidence: ocrViewModel.confidence
             )
@@ -169,5 +169,16 @@ struct OcrReviewView: View {
 
     private func loadImage() -> UIImage? {
         UIImage(contentsOfFile: imagePath)
+    }
+
+    /// Parses an ISO-8601 date string (YYYY-MM-DD) into a Kotlinx_datetimeLocalDate.
+    private static func parseDate(_ dateString: String?) -> Kotlinx_datetimeLocalDate? {
+        guard let dateString, !dateString.isEmpty else { return nil }
+        let parts = dateString.split(separator: "-")
+        guard parts.count == 3,
+              let y = Int32(parts[0]),
+              let m = Int32(parts[1]),
+              let d = Int32(parts[2]) else { return nil }
+        return Kotlinx_datetimeLocalDate(year: y, monthNumber: m, dayOfMonth: d)
     }
 }

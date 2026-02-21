@@ -127,7 +127,7 @@ struct TripRowView: View {
                     .foregroundStyle(.secondary)
             }
             if let start = trip.startDate, let end = trip.endDate {
-                Text("\(start.toString()) – \(end.toString())")
+                Text("\(start.description()) – \(end.description())")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
             }

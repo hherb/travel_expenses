@@ -7,7 +7,7 @@ import Shared
 final class ServiceContainer: ObservableObject {
 
     // MARK: - KMP Shared infrastructure
-    let db: TravelExpensesDb
+    let db: any TravelExpensesDb
     let eventLogRepo: SqlDelightEventLogRepository
     let tripRepo: SqlDelightTripRepository
     let expenseRepo: SqlDelightExpenseRepository
@@ -38,35 +38,40 @@ final class ServiceContainer: ObservableObject {
 
         // SQLite via KMP
         let driver = DatabaseDriverFactory().createDriver()
-        db = TravelExpensesDb(driver: driver)
+        let queryContext = IosDispatchers.shared.default_
+        db = TravelExpensesDbCompanion.shared.invoke(driver: driver)
+
+        // Replay engine for event log
+        let replayEngine = EventReplayEngine(db: db, queryContext: queryContext)
 
         // Repositories – use background dispatcher for I/O
         eventLogRepo = SqlDelightEventLogRepository(
             db: db,
-            dispatcher: Dispatchers.shared.Default,
-            deviceId: id
+            queryContext: queryContext,
+            replayEngine: replayEngine,
+            json: IosJson.shared.instance
         )
-        tripRepo = SqlDelightTripRepository(db: db, dispatcher: Dispatchers.shared.Default)
-        expenseRepo = SqlDelightExpenseRepository(db: db, dispatcher: Dispatchers.shared.Default)
-        categoryRepo = SqlDelightCategoryRepository(db: db, dispatcher: Dispatchers.shared.Default)
-        exchangeRateRepo = SqlDelightExchangeRateRepository(db: db, dispatcher: Dispatchers.shared.Default)
-        tagRepo = SqlDelightTagRepository(db: db, dispatcher: Dispatchers.shared.Default)
+        tripRepo = SqlDelightTripRepository(db: db, queryContext: queryContext)
+        expenseRepo = SqlDelightExpenseRepository(db: db, queryContext: queryContext)
+        categoryRepo = SqlDelightCategoryRepository(db: db, queryContext: queryContext)
+        exchangeRateRepo = SqlDelightExchangeRateRepository(db: db, queryContext: queryContext)
+        tagRepo = SqlDelightTagRepository(db: db, queryContext: queryContext)
 
         // Business logic singletons
-        currencyConverter = CurrencyConverter(exchangeRateRepository: exchangeRateRepo)
-        exchangeRateService = ExchangeRateService(repository: exchangeRateRepo)
+        currencyConverter = CurrencyConverter(exchangeRateRepo: exchangeRateRepo)
+        exchangeRateService = ExchangeRateService(exchangeRateRepo: exchangeRateRepo, httpClient: nil)
         csvExporter = CsvExporter(
-            expenseRepository: expenseRepo,
-            tripRepository: tripRepo,
-            categoryRepository: categoryRepo,
-            tagRepository: tagRepo
+            expenseRepo: expenseRepo,
+            tripRepo: tripRepo,
+            categoryRepo: categoryRepo,
+            currencyConverter: nil
         )
-        ocrParser = OcrParser()
+        ocrParser = OcrParser(tripCurrency: nil)
         syncManager = SyncManager(
-            eventLogRepository: eventLogRepo,
-            expenseRepository: expenseRepo,
+            eventLogRepo: eventLogRepo,
+            replayEngine: replayEngine,
             deviceId: id
         )
-        expenseValidator = ExpenseValidator()
+        expenseValidator = ExpenseValidator.shared
     }
 }

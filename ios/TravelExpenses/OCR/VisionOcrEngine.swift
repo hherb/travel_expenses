@@ -43,7 +43,7 @@ final class VisionOcrEngine: OcrEngine {
                     blocks.append(
                         TextBlock(
                             text: candidate.string,
-                            confidence: candidate.confidence
+                            confidence: KotlinFloat(value: candidate.confidence)
                         )
                     )
                 }

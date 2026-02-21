@@ -92,7 +92,7 @@ final class ReportsViewModel: ObservableObject {
             let expenses = try await expenseRepo.getExpensesForTrip(tripId: tripId)
             let expensesArr = expenses as? [Expense] ?? []
             let categories = try await categoryRepo.getAllCategories()
-            let catNameMap = Dictionary(uniqueKeysWithValues: (categories as? [Category] ?? []).map { ($0.id, $0.name) })
+            let catNameMap = Dictionary(uniqueKeysWithValues: (categories as? [Shared.Category] ?? []).map { ($0.id, $0.name) })
 
             // Total in trip base currency
             let totalResult = try await currencyConverter.aggregateTripTotal(

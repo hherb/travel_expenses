@@ -110,7 +110,7 @@ struct ExpenseRowView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(expense.vendor ?? "Unknown vendor")
                     .font(.headline)
-                Text(expense.date.toString())
+                Text(expense.date.description())
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
