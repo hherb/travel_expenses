@@ -14,9 +14,10 @@ import kotlin.math.roundToLong
  * (canonical amounts are always stored in original currency as String-encoded decimals).
  *
  * Lookup order:
- * 1. ExchangeRateRepository (date-specific rate)
- * 2. ExchangeRateRepository (latest available rate for pair)
- * 3. Static fallback table (common pairs with approximate rates)
+ * 1. ExchangeRateRepository (date-specific rate, direct then inverse)
+ * 2. ExchangeRateRepository (latest available rate, direct then inverse)
+ * 3. Static fallback table (direct then inverse)
+ * 4. Triangulation through USD (e.g. IDR→USD→AUD)
  */
 class CurrencyConverter(
     private val exchangeRateRepo: ExchangeRateRepository,
@@ -68,7 +69,7 @@ class CurrencyConverter(
             )
         }
 
-        // Static fallback
+        // Static fallback (direct)
         val fallbackRate = StaticRates.getRate(fromCurrency, toCurrency)
         if (fallbackRate != null) {
             val rateDouble = fallbackRate.toDoubleOrNull() ?: return null
@@ -78,6 +79,35 @@ class CurrencyConverter(
                 rate = fallbackRate,
                 source = "static_fallback",
             )
+        }
+
+        // Static fallback (inverse)
+        val fallbackInverse = StaticRates.getRate(toCurrency, fromCurrency)
+        if (fallbackInverse != null) {
+            val rateDouble = fallbackInverse.toDoubleOrNull() ?: return null
+            if (rateDouble == 0.0) return null
+            val invertedRate = 1.0 / rateDouble
+            val converted = amountDouble * invertedRate
+            return ConversionResult(
+                convertedAmount = roundToTwoDecimals(converted),
+                rate = formatRate(invertedRate),
+                source = "static_fallback_inverse",
+            )
+        }
+
+        // Triangulation through USD when neither direct nor inverse rates exist
+        if (fromCurrency != "USD" && toCurrency != "USD") {
+            val fromToUsd = convertWithoutTriangulation(amount, fromCurrency, "USD", date)
+            if (fromToUsd != null) {
+                val usdToTarget = convertWithoutTriangulation(fromToUsd.convertedAmount, "USD", toCurrency, date)
+                if (usdToTarget != null) {
+                    return ConversionResult(
+                        convertedAmount = usdToTarget.convertedAmount,
+                        rate = usdToTarget.rate,
+                        source = "triangulated_via_usd",
+                    )
+                }
+            }
         }
 
         return null
@@ -118,6 +148,52 @@ class CurrencyConverter(
             baseCurrency = baseCurrency,
             unconvertedExpenses = unconverted,
         )
+    }
+
+    /**
+     * Convert without USD triangulation to avoid infinite recursion.
+     * Used internally by the triangulation step.
+     */
+    private suspend fun convertWithoutTriangulation(
+        amount: String,
+        fromCurrency: String,
+        toCurrency: String,
+        date: LocalDate?,
+    ): ConversionResult? {
+        if (fromCurrency == toCurrency) {
+            return ConversionResult(convertedAmount = amount, rate = "1", source = "identity")
+        }
+        val amountDouble = amount.toDoubleOrNull() ?: return null
+
+        // Direct repo rate
+        val directRate = findRate(fromCurrency, toCurrency, date)
+        if (directRate != null) {
+            val rateDouble = directRate.rate.toDoubleOrNull() ?: return null
+            return ConversionResult(roundToTwoDecimals(amountDouble * rateDouble), directRate.rate, directRate.source)
+        }
+        // Inverse repo rate
+        val inverseRate = findRate(toCurrency, fromCurrency, date)
+        if (inverseRate != null) {
+            val rateDouble = inverseRate.rate.toDoubleOrNull() ?: return null
+            if (rateDouble == 0.0) return null
+            val invertedRate = 1.0 / rateDouble
+            return ConversionResult(roundToTwoDecimals(amountDouble * invertedRate), formatRate(invertedRate), inverseRate.source)
+        }
+        // Direct static
+        val fallback = StaticRates.getRate(fromCurrency, toCurrency)
+        if (fallback != null) {
+            val rateDouble = fallback.toDoubleOrNull() ?: return null
+            return ConversionResult(roundToTwoDecimals(amountDouble * rateDouble), fallback, "static_fallback")
+        }
+        // Inverse static
+        val fallbackInv = StaticRates.getRate(toCurrency, fromCurrency)
+        if (fallbackInv != null) {
+            val rateDouble = fallbackInv.toDoubleOrNull() ?: return null
+            if (rateDouble == 0.0) return null
+            val invertedRate = 1.0 / rateDouble
+            return ConversionResult(roundToTwoDecimals(amountDouble * invertedRate), formatRate(invertedRate), "static_fallback_inverse")
+        }
+        return null
     }
 
     private suspend fun findRate(
