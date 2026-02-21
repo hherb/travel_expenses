@@ -82,6 +82,9 @@ UPDATE trip SET base_currency = ? WHERE id = ?;
 selectActiveTrips:
 SELECT * FROM trip WHERE is_archived = 0 ORDER BY created_at DESC;
 
+selectAllTrips:
+SELECT * FROM trip ORDER BY created_at DESC;
+
 -- Returns trip regardless of archive status (used by getTrip for detail views).
 selectTripById:
 SELECT * FROM trip WHERE id = ?;

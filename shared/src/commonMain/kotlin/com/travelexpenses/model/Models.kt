@@ -40,6 +40,7 @@ data class Trip(
     val endDate: LocalDate? = null,
     val baseCurrency: String,
     val createdAt: Instant,
+    val isArchived: Boolean = false,
 )
 
 @Serializable

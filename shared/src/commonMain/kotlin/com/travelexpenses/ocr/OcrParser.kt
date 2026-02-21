@@ -71,7 +71,7 @@ class OcrParser(
         val bottomThird = lines.drop((lines.size * 2) / 3)
         val amounts = bottomThird.flatMap { extractAllAmounts(it) }
         if (amounts.isNotEmpty()) {
-            val largest = amounts.maxByOrNull { it.toBigDecimalOrNull() ?: 0.toBigDecimal() }
+            val largest = amounts.maxByOrNull { it.toDoubleOrNull() ?: 0.0 }
             if (largest != null) return largest to 0.5f
         }
 

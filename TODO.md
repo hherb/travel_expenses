@@ -1,6 +1,6 @@
 # TODO -- Travel Expenses v1.0
 
-Status: **Phase 0 + Phase 1 + Phase 2 + Phase 3 + Phase 4 (Android Polish) complete.**
+Status: **Phase 0 + Phase 1 + Phase 2 + Phase 3 + Phase 4 (Android Polish) + Phase 5 (iOS App) complete.**
 
 Full spec: `SPEC.md`. Build/test commands: `CLAUDE.md`. Machine paths: `LOCAL_BUILD_ENV.md`.
 
@@ -114,31 +114,50 @@ Full spec: `SPEC.md`. Build/test commands: `CLAUDE.md`. Machine paths: `LOCAL_BU
 
 ---
 
+### Phase 5 Details
+
+#### iOS App (`ios/`)
+
+##### KMP shared additions
+- [x] `FlowBridge.kt` in `iosMain/` -- `TripFlowBridge`, `ExpenseFlowBridge`, `CategoryFlowBridge`, `TagFlowBridge` callback wrappers that collect Kotlin Flows on the Main dispatcher and notify Swift observers
+
+##### OCR Integration
+- [x] `VisionOcrEngine.swift` -- Apple Vision `VNRecognizeTextRequest` wrapper implementing the KMP `OcrEngine` interface (on-device, no network)
+- [x] `CaptureView.swift` -- camera capture via `UIImagePickerController` + photo library via `PhotosPicker`
+- [x] `ImagePreprocessor.swift` -- grayscale + contrast enhancement via CoreImage before Vision OCR
+- [x] `OcrReviewView.swift` -- editable review form with per-field confidence indicator
+
+##### UI (SwiftUI)
+- [x] `TripListView.swift` -- active/archived trip list, create trip sheet, swipe-to-archive
+- [x] `TripDetailView.swift` -- summary card with total, expense list with swipe-to-delete, add expense FAB
+- [x] `ExpenseEntryView.swift` -- amount/currency/category/date/vendor/tax/notes form, OCR pre-fill
+- [x] `OcrReviewView.swift` / `CaptureView.swift` -- receipt camera capture + review flow
+- [x] Category dropdown + tag multi-select picker with inline tag creation (`TagPickerSheet`)
+- [x] `ReportsView.swift` -- trip selector, summary cards (total/count/daily avg), pie chart, category breakdown progress bars
+- [x] `PieChartView.swift` -- Canvas-based pie chart with colour-coded legend
+- [x] CSV export via system share sheet (`ShareSheet`)
+- [x] `SettingsView.swift` -- biometric/PIN toggles, auto-lock picker, archive export/import, CSV export
+
+##### Security
+- [x] `AuthManager.swift` -- Face ID / Touch ID via `LocalAuthentication`, 6-digit PIN with PBKDF2-SHA256 stored in Keychain
+- [x] `LockView.swift` -- PIN entry with auto-verify + biometric prompt on appear
+- [x] Auto-lock timeout (immediate / 1 min / 5 min / 15 min) with foreground/background tracking
+- [x] `ContentView.swift` -- `.privacySensitive()` hides content in app switcher when security is enabled
+
+##### Project structure
+- [x] `TravelExpenses.xcodeproj/project.pbxproj` -- Xcode project linking `Shared.xcframework` from KMP build
+- [x] `Info.plist` -- camera/photo/Face-ID usage descriptions, no ITSAppUsesNonExemptEncryption
+- [x] `Assets.xcassets` -- AccentColor + AppIcon catalogues
+
+##### DI
+- [x] `ServiceContainer.swift` -- `@MainActor ObservableObject` initialising all KMP repos and business-logic singletons; propagated via `@EnvironmentObject`
+- [x] `DefaultCategoryInitializer.swift` -- seeds 9 default categories on first launch via `CategoryCreated` events
+
+---
+
 ## Remaining
 
-### Platform: iOS (`ios/`)
-
-#### OCR Integration
-- [ ] Apple Vision text recognition wrapper implementing `OcrEngine` interface
-- [ ] Camera capture / photo picker for receipt images
-- [ ] Image preprocessing before OCR
-
-#### UI (SwiftUI)
-- [ ] Trip list screen
-- [ ] Expense entry screen (manual + OCR review)
-- [ ] Receipt camera capture flow
-- [ ] Category/tag pickers
-- [ ] Trip summary / reports with charts
-- [ ] CSV export share sheet
-- [ ] Settings screen
-
-#### Security
-- [ ] Face ID / Touch ID via LocalAuthentication
-- [ ] PIN fallback
-- [ ] Auto-lock timeout
-- [ ] Hide content in app switcher
-
-**Context:** SPEC.md Sections 4.1, 4.6, 5.1-5.3, 6.1 (project structure)
+*(none -- all v1.0 features are implemented)*
 
 ---
 
@@ -151,7 +170,7 @@ Full spec: `SPEC.md`. Build/test commands: `CLAUDE.md`. Machine paths: `LOCAL_BU
 
 ## Suggested Next Steps
 
-1. **iOS app skeleton** -- DI, navigation, basic SwiftUI screens
-2. **Accessibility** -- audit + fix labels, contrast, scaling on Android
-3. **End-to-end testing** -- full capture flow on Android device
-4. **Performance** -- SQLite query benchmarks, lazy loading for large trip histories
+1. **Accessibility** -- audit + fix labels, contrast, dynamic type scaling on both platforms
+2. **End-to-end testing** -- full capture flow on Android device + iOS simulator
+3. **Performance** -- SQLite query benchmarks, lazy loading for large trip histories
+4. **v1.x** -- macOS companion app (SwiftUI, same KMP module), widgets, recurring expenses

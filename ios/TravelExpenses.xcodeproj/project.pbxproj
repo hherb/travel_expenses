@@ -1,0 +1,517 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		AA000001 /* TravelExpensesApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000001 /* TravelExpensesApp.swift */; };
+		AA000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000002 /* ContentView.swift */; };
+		AA000003 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000003 /* MainTabView.swift */; };
+		AA000004 /* ServiceContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000004 /* ServiceContainer.swift */; };
+		AA000005 /* DefaultCategoryInitializer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000005 /* DefaultCategoryInitializer.swift */; };
+		AA000006 /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000006 /* AuthManager.swift */; };
+		AA000007 /* LockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000007 /* LockView.swift */; };
+		AA000008 /* VisionOcrEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000008 /* VisionOcrEngine.swift */; };
+		AA000009 /* ImagePreprocessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000009 /* ImagePreprocessor.swift */; };
+		AA000010 /* TripViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000010 /* TripViewModel.swift */; };
+		AA000011 /* TripListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000011 /* TripListView.swift */; };
+		AA000012 /* TripDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000012 /* TripDetailView.swift */; };
+		AA000013 /* ExpenseViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000013 /* ExpenseViewModel.swift */; };
+		AA000014 /* ExpenseEntryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000014 /* ExpenseEntryView.swift */; };
+		AA000015 /* OcrViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000015 /* OcrViewModel.swift */; };
+		AA000016 /* CaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000016 /* CaptureView.swift */; };
+		AA000017 /* OcrReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000017 /* OcrReviewView.swift */; };
+		AA000018 /* ReportsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000018 /* ReportsViewModel.swift */; };
+		AA000019 /* ReportsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000019 /* ReportsView.swift */; };
+		AA000020 /* PieChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000020 /* PieChartView.swift */; };
+		AA000021 /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000021 /* SettingsViewModel.swift */; };
+		AA000022 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000022 /* SettingsView.swift */; };
+		AA000030 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AB000030 /* Assets.xcassets */; };
+		AA000031 /* Shared.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = AB000031 /* Shared.xcframework */; };
+		AA000032 /* Shared.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = AB000031 /* Shared.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		AC000001 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				AA000032 /* Shared.xcframework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		AB000001 /* TravelExpensesApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelExpensesApp.swift; sourceTree = "<group>"; };
+		AB000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		AB000003 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		AB000004 /* ServiceContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceContainer.swift; sourceTree = "<group>"; };
+		AB000005 /* DefaultCategoryInitializer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultCategoryInitializer.swift; sourceTree = "<group>"; };
+		AB000006 /* AuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
+		AB000007 /* LockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockView.swift; sourceTree = "<group>"; };
+		AB000008 /* VisionOcrEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisionOcrEngine.swift; sourceTree = "<group>"; };
+		AB000009 /* ImagePreprocessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagePreprocessor.swift; sourceTree = "<group>"; };
+		AB000010 /* TripViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripViewModel.swift; sourceTree = "<group>"; };
+		AB000011 /* TripListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripListView.swift; sourceTree = "<group>"; };
+		AB000012 /* TripDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripDetailView.swift; sourceTree = "<group>"; };
+		AB000013 /* ExpenseViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpenseViewModel.swift; sourceTree = "<group>"; };
+		AB000014 /* ExpenseEntryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpenseEntryView.swift; sourceTree = "<group>"; };
+		AB000015 /* OcrViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OcrViewModel.swift; sourceTree = "<group>"; };
+		AB000016 /* CaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureView.swift; sourceTree = "<group>"; };
+		AB000017 /* OcrReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OcrReviewView.swift; sourceTree = "<group>"; };
+		AB000018 /* ReportsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportsViewModel.swift; sourceTree = "<group>"; };
+		AB000019 /* ReportsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportsView.swift; sourceTree = "<group>"; };
+		AB000020 /* PieChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PieChartView.swift; sourceTree = "<group>"; };
+		AB000021 /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
+		AB000022 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		AB000030 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		AB000031 /* Shared.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = Shared.xcframework; path = "../shared/build/XCFrameworks/release/Shared.xcframework"; sourceTree = "<group>"; };
+		AB000040 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		AB000050 /* TravelExpenses.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TravelExpenses.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		AD000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA000031 /* Shared.xcframework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		AE000001 /* root */ = {
+			isa = PBXGroup;
+			children = (
+				AE000002 /* TravelExpenses */,
+				AE000010 /* Frameworks */,
+				AE000020 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		AE000002 /* TravelExpenses */ = {
+			isa = PBXGroup;
+			children = (
+				AE000003 /* App */,
+				AE000004 /* DI */,
+				AE000005 /* Auth */,
+				AE000006 /* OCR */,
+				AE000007 /* UI */,
+				AB000030 /* Assets.xcassets */,
+				AB000040 /* Info.plist */,
+			);
+			path = TravelExpenses;
+			sourceTree = "<group>";
+		};
+		AE000003 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				AB000001 /* TravelExpensesApp.swift */,
+				AB000002 /* ContentView.swift */,
+				AB000003 /* MainTabView.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		AE000004 /* DI */ = {
+			isa = PBXGroup;
+			children = (
+				AB000004 /* ServiceContainer.swift */,
+				AB000005 /* DefaultCategoryInitializer.swift */,
+			);
+			path = DI;
+			sourceTree = "<group>";
+		};
+		AE000005 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				AB000006 /* AuthManager.swift */,
+				AB000007 /* LockView.swift */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		AE000006 /* OCR */ = {
+			isa = PBXGroup;
+			children = (
+				AB000008 /* VisionOcrEngine.swift */,
+				AB000009 /* ImagePreprocessor.swift */,
+			);
+			path = OCR;
+			sourceTree = "<group>";
+		};
+		AE000007 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				AE000008 /* Trips */,
+				AE000009 /* Expenses */,
+				AE000011 /* OCR */,
+				AE000012 /* Reports */,
+				AE000013 /* Settings */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		AE000008 /* Trips */ = {
+			isa = PBXGroup;
+			children = (
+				AB000010 /* TripViewModel.swift */,
+				AB000011 /* TripListView.swift */,
+				AB000012 /* TripDetailView.swift */,
+			);
+			path = Trips;
+			sourceTree = "<group>";
+		};
+		AE000009 /* Expenses */ = {
+			isa = PBXGroup;
+			children = (
+				AB000013 /* ExpenseViewModel.swift */,
+				AB000014 /* ExpenseEntryView.swift */,
+			);
+			path = Expenses;
+			sourceTree = "<group>";
+		};
+		AE000011 /* OCR */ = {
+			isa = PBXGroup;
+			children = (
+				AB000015 /* OcrViewModel.swift */,
+				AB000016 /* CaptureView.swift */,
+				AB000017 /* OcrReviewView.swift */,
+			);
+			path = OCR;
+			sourceTree = "<group>";
+		};
+		AE000012 /* Reports */ = {
+			isa = PBXGroup;
+			children = (
+				AB000018 /* ReportsViewModel.swift */,
+				AB000019 /* ReportsView.swift */,
+				AB000020 /* PieChartView.swift */,
+			);
+			path = Reports;
+			sourceTree = "<group>";
+		};
+		AE000013 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				AB000021 /* SettingsViewModel.swift */,
+				AB000022 /* SettingsView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		AE000010 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				AB000031 /* Shared.xcframework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		AE000020 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AB000050 /* TravelExpenses.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		AF000001 /* TravelExpenses */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AG000001 /* Build configuration list for PBXNativeTarget "TravelExpenses" */;
+			buildPhases = (
+				AH000001 /* Sources */,
+				AD000001 /* Frameworks */,
+				AH000002 /* Resources */,
+				AC000001 /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TravelExpenses;
+			productName = TravelExpenses;
+			productReference = AB000050 /* TravelExpenses.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		AF000000 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					AF000001 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = AG000000 /* Build configuration list for PBXProject "TravelExpenses" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = AE000001;
+			productRefGroup = AE000020 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				AF000001 /* TravelExpenses */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		AH000002 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA000030 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		AH000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA000001 /* TravelExpensesApp.swift in Sources */,
+				AA000002 /* ContentView.swift in Sources */,
+				AA000003 /* MainTabView.swift in Sources */,
+				AA000004 /* ServiceContainer.swift in Sources */,
+				AA000005 /* DefaultCategoryInitializer.swift in Sources */,
+				AA000006 /* AuthManager.swift in Sources */,
+				AA000007 /* LockView.swift in Sources */,
+				AA000008 /* VisionOcrEngine.swift in Sources */,
+				AA000009 /* ImagePreprocessor.swift in Sources */,
+				AA000010 /* TripViewModel.swift in Sources */,
+				AA000011 /* TripListView.swift in Sources */,
+				AA000012 /* TripDetailView.swift in Sources */,
+				AA000013 /* ExpenseViewModel.swift in Sources */,
+				AA000014 /* ExpenseEntryView.swift in Sources */,
+				AA000015 /* OcrViewModel.swift in Sources */,
+				AA000016 /* CaptureView.swift in Sources */,
+				AA000017 /* OcrReviewView.swift in Sources */,
+				AA000018 /* ReportsViewModel.swift in Sources */,
+				AA000019 /* ReportsView.swift in Sources */,
+				AA000020 /* PieChartView.swift in Sources */,
+				AA000021 /* SettingsViewModel.swift in Sources */,
+				AA000022 /* SettingsView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		AG000010 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		AG000011 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		AG000020 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TravelExpenses/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.travelexpenses.ios;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		AG000021 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TravelExpenses/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.travelexpenses.ios;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		AG000000 /* Build configuration list for PBXProject "TravelExpenses" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AG000010 /* Debug */,
+				AG000011 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AG000001 /* Build configuration list for PBXNativeTarget "TravelExpenses" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AG000020 /* Debug */,
+				AG000021 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+	};
+	rootObject = AF000000 /* Project object */;
+}

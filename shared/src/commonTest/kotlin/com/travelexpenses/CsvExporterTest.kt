@@ -39,6 +39,7 @@ private class FakeTripRepository(
     override suspend fun getActiveTrips() = trips
     override suspend fun getArchivedTrips() = emptyList<Trip>()
     override fun observeActiveTrips(): Flow<List<Trip>> = flowOf(trips)
+    override fun observeAllTrips(): Flow<List<Trip>> = flowOf(trips)
 }
 
 private class FakeCategoryRepository(
