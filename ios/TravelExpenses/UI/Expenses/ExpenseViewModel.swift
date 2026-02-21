@@ -198,7 +198,7 @@ final class ExpenseViewModel: ObservableObject {
         self.categoryBridge = bridge
         bridge.collectAll(
             onEach: { [weak self] cats in
-                Task { @MainActor in self?.categories = cats as? [Shared.Category] ?? [] }
+                Task { @MainActor in self?.categories = cats }
             },
             onError: { _ in }
         )
@@ -209,7 +209,7 @@ final class ExpenseViewModel: ObservableObject {
         self.tagBridge = bridge
         bridge.collectAll(
             onEach: { [weak self] tagList in
-                Task { @MainActor in self?.tags = tagList as? [Tag] ?? [] }
+                Task { @MainActor in self?.tags = tagList }
             },
             onError: { _ in }
         )
@@ -219,7 +219,7 @@ final class ExpenseViewModel: ObservableObject {
         Task {
             do {
                 let vendors = try await expenseRepo.getDistinctVendors()
-                vendorSuggestions = vendors as? [String] ?? []
+                vendorSuggestions = vendors
             } catch {
                 print("[ExpenseViewModel] Failed to load vendor suggestions: \(error)")
             }
@@ -237,7 +237,7 @@ final class ExpenseViewModel: ObservableObject {
                 formState.date       = expense.date
                 formState.notes      = expense.notes ?? ""
                 formState.taxAmount  = expense.taxAmount ?? ""
-                formState.selectedTagIds = expense.tags as? [String] ?? []
+                formState.selectedTagIds = expense.tags
             } catch {
                 print("[ExpenseViewModel] Failed to load expense: \(error)")
             }

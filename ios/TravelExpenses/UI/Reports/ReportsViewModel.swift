@@ -72,7 +72,7 @@ final class ReportsViewModel: ObservableObject {
         bridge.collectActiveTrips(
             onEach: { [weak self] tripsAny in
                 Task { @MainActor in
-                    self?.trips = tripsAny as? [Trip] ?? []
+                    self?.trips = tripsAny
                     // Auto-select first trip if none selected
                     if self?.selectedTripId == nil, let first = self?.trips.first {
                         self?.selectTrip(first.id)
@@ -90,9 +90,9 @@ final class ReportsViewModel: ObservableObject {
         do {
             guard let trip = try await tripRepo.getTrip(tripId: tripId) else { return }
             let expenses = try await expenseRepo.getExpensesForTrip(tripId: tripId)
-            let expensesArr = expenses as? [Expense] ?? []
+            let expensesArr = expenses
             let categories = try await categoryRepo.getAllCategories()
-            let catNameMap = Dictionary(uniqueKeysWithValues: (categories as? [Shared.Category] ?? []).map { ($0.id, $0.name) })
+            let catNameMap = Dictionary(uniqueKeysWithValues: categories.map { ($0.id, $0.name) })
 
             // Total in trip base currency
             let totalResult = try await currencyConverter.aggregateTripTotal(

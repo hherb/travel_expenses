@@ -46,7 +46,7 @@ final class TripViewModel: ObservableObject {
         bridge.collectActiveTrips(
             onEach: { [weak self] trips in
                 Task { @MainActor in
-                    self?.activeTrips = trips as? [Trip] ?? []
+                    self?.activeTrips = trips
                 }
             },
             onError: { [weak self] error in
@@ -57,8 +57,7 @@ final class TripViewModel: ObservableObject {
         bridge.collectAllTrips(
             onEach: { [weak self] trips in
                 Task { @MainActor in
-                    let all = trips as? [Trip] ?? []
-                    self?.archivedTrips = all.filter { $0.isArchived == true }
+                    self?.archivedTrips = trips.filter { $0.isArchived }
                 }
             },
             onError: { _ in }
@@ -136,7 +135,7 @@ final class TripViewModel: ObservableObject {
                     tripId: tripId,
                     onEach: { [weak self] expenses in
                         Task { @MainActor in
-                            self?.tripExpenses = expenses as? [Expense] ?? []
+                            self?.tripExpenses = expenses
                             self?.recalculateTotal()
                         }
                     },

@@ -67,7 +67,7 @@ final class SettingsViewModel: ObservableObject {
             isLoading = true
             defer { isLoading = false }
             do {
-                let archive = try EventArchiveSerializer.shared.deserialize(jsonString: json)
+                let archive = EventArchiveSerializer.shared.deserialize(jsonString: json)
                 try await syncManager.importArchive(archive: archive)
                 importResult = "Import complete (\(archive.eventCount) events)"
             } catch {
