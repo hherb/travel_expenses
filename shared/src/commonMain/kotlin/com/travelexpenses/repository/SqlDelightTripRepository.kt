@@ -36,6 +36,13 @@ class SqlDelightTripRepository(
             .map { rows -> rows.map { it.toTrip() } }
     }
 
+    override fun observeAllTrips(): Flow<List<Trip>> {
+        return db.materializedStateQueries.selectAllTrips()
+            .asFlow()
+            .mapToList(queryContext)
+            .map { rows -> rows.map { it.toTrip() } }
+    }
+
     private fun com.travelexpenses.db.Trip.toTrip(): Trip {
         return Trip(
             id = id,
@@ -45,6 +52,7 @@ class SqlDelightTripRepository(
             endDate = end_date?.let { LocalDate.parse(it) },
             baseCurrency = base_currency,
             createdAt = Instant.parse(created_at),
+            isArchived = is_archived != 0L,
         )
     }
 }

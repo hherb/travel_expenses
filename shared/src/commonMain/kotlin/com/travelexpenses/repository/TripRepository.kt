@@ -9,4 +9,5 @@ interface TripRepository {
     suspend fun getActiveTrips(): List<Trip>
     suspend fun getArchivedTrips(): List<Trip>
     fun observeActiveTrips(): Flow<List<Trip>>
+    fun observeAllTrips(): Flow<List<Trip>>
 }

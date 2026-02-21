@@ -4,8 +4,8 @@ import Shared
 @MainActor
 final class SettingsViewModel: ObservableObject {
 
-    @Published var exportedArchive: String?
-    @Published var exportedCsv: String?
+    @Published var exportedArchive: IdentifiableString?
+    @Published var exportedCsv: IdentifiableString?
     @Published var importResult: String?
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
@@ -54,7 +54,8 @@ final class SettingsViewModel: ObservableObject {
             defer { isLoading = false }
             do {
                 let archive = try await syncManager.exportArchive()
-                exportedArchive = EventArchiveSerializer.companion.serialize(archive: archive)
+                let json = EventArchiveSerializer.companion.serialize(archive: archive)
+                exportedArchive = IdentifiableString(value: json)
             } catch {
                 errorMessage = error.localizedDescription
             }
@@ -80,7 +81,8 @@ final class SettingsViewModel: ObservableObject {
             isLoading = true
             defer { isLoading = false }
             do {
-                exportedCsv = try await csvExporter.exportAll()
+                let csv = try await csvExporter.exportAll()
+                exportedCsv = IdentifiableString(value: csv)
             } catch {
                 errorMessage = error.localizedDescription
             }

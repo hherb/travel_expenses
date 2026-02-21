@@ -18,7 +18,12 @@ final class VisionOcrEngine: OcrEngine {
         }
 
         return try await withCheckedThrowingContinuation { continuation in
+            var hasResumed = false
+
             let request = VNRecognizeTextRequest { request, error in
+                guard !hasResumed else { return }
+                hasResumed = true
+
                 if let error {
                     continuation.resume(throwing: error)
                     return
@@ -55,6 +60,8 @@ final class VisionOcrEngine: OcrEngine {
             do {
                 try handler.perform([request])
             } catch {
+                guard !hasResumed else { return }
+                hasResumed = true
                 continuation.resume(throwing: error)
             }
         }

@@ -70,7 +70,7 @@ final class AuthManager: ObservableObject {
         guard pin.count == 6, pin.allSatisfy(\.isNumber) else {
             throw AuthError.invalidPin
         }
-        let salt = generateSalt()
+        let salt = try generateSalt()
         let hash = try hashPin(pin, salt: salt)
         try saveToKeychain(value: hash, account: keychainAccount)
         try saveToKeychain(value: salt.base64EncodedString(), account: saltKeychainAccount)
@@ -131,15 +131,16 @@ final class AuthManager: ObservableObject {
         }
     }
 
-    private func generateSalt() -> Data {
+    private func generateSalt() throws -> Data {
         var bytes = [UInt8](repeating: 0, count: 16)
-        _ = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+        let status = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+        guard status == errSecSuccess else { throw AuthError.hashingFailed }
         return Data(bytes)
     }
 
     private func hashPin(_ pin: String, salt: Data) throws -> String {
         guard let pinData = pin.data(using: .utf8) else { throw AuthError.hashingFailed }
-        // PBKDF2-SHA256, 10 000 iterations, 32-byte key
+        // PBKDF2-SHA256, 600 000 iterations (OWASP 2023 recommendation), 32-byte key
         var derivedKey = [UInt8](repeating: 0, count: 32)
         let result = pinData.withUnsafeBytes { pinBytes in
             salt.withUnsafeBytes { saltBytes in
@@ -148,7 +149,7 @@ final class AuthManager: ObservableObject {
                     pinBytes.baseAddress?.assumingMemoryBound(to: Int8.self), pin.utf8.count,
                     saltBytes.baseAddress?.assumingMemoryBound(to: UInt8.self), salt.count,
                     CCPseudoRandomAlgorithm(kCCPRFHmacAlgSHA256),
-                    10_000,
+                    600_000,
                     &derivedKey, derivedKey.count
                 )
             }

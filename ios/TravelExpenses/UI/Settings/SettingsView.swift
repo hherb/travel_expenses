@@ -32,11 +32,11 @@ struct SettingsView: View {
             ) { result in
                 handleImport(result)
             }
-            .sheet(item: $viewModel.exportedArchive) { json in
-                ShareSheet(items: [json])
+            .sheet(item: $viewModel.exportedArchive) { wrapper in
+                ShareSheet(items: [wrapper.value])
             }
-            .sheet(item: $viewModel.exportedCsv) { csv in
-                ShareSheet(items: [csv])
+            .sheet(item: $viewModel.exportedCsv) { wrapper in
+                ShareSheet(items: [wrapper.value])
             }
             .alert("Import Result", isPresented: .constant(viewModel.importResult != nil)) {
                 Button("OK") { viewModel.importResult = nil }

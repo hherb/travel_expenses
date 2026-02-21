@@ -64,6 +64,11 @@ final class ExpenseViewModel: ObservableObject {
         }
     }
 
+    deinit {
+        categoryBridge?.cancel()
+        tagBridge?.cancel()
+    }
+
     // Convenience initialiser when pre-filled from OCR
     func applyOcrResult(
         amount: String,
@@ -217,7 +222,9 @@ final class ExpenseViewModel: ObservableObject {
             do {
                 let vendors = try await expenseRepo.getDistinctVendors()
                 vendorSuggestions = vendors as? [String] ?? []
-            } catch {}
+            } catch {
+                print("[ExpenseViewModel] Failed to load vendor suggestions: \(error)")
+            }
         }
     }
 
@@ -233,7 +240,9 @@ final class ExpenseViewModel: ObservableObject {
                 formState.notes      = expense.notes ?? ""
                 formState.taxAmount  = expense.taxAmount ?? ""
                 formState.selectedTagIds = expense.tags as? [String] ?? []
-            } catch {}
+            } catch {
+                print("[ExpenseViewModel] Failed to load expense: \(error)")
+            }
         }
     }
 }

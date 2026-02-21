@@ -7,7 +7,10 @@ struct TripListView: View {
     @State private var showCreateSheet = false
     @State private var showArchived = false
 
+    private let container: ServiceContainer
+
     init(container: ServiceContainer) {
+        self.container = container
         _viewModel = StateObject(wrappedValue: TripViewModel(container: container))
     }
 
@@ -71,7 +74,7 @@ struct TripListView: View {
                 Section("Active") {
                     ForEach(viewModel.activeTrips, id: \.id) { trip in
                         NavigationLink {
-                            TripDetailView(trip: trip, container: containerFrom(viewModel))
+                            TripDetailView(trip: trip, container: container)
                         } label: {
                             TripRowView(trip: trip)
                         }
@@ -90,7 +93,7 @@ struct TripListView: View {
                 Section("Archived") {
                     ForEach(viewModel.archivedTrips, id: \.id) { trip in
                         NavigationLink {
-                            TripDetailView(trip: trip, container: containerFrom(viewModel))
+                            TripDetailView(trip: trip, container: container)
                         } label: {
                             TripRowView(trip: trip, isArchived: true)
                         }
@@ -99,17 +102,6 @@ struct TripListView: View {
             }
         }
         .listStyle(.insetGrouped)
-        .refreshable {
-            // Flows update automatically; pull-to-refresh is just UX nicety
-        }
-    }
-
-    // Convenience: ServiceContainer is injected via environment in practice.
-    // Here we expose it through a helper for navigation.
-    private func containerFrom(_ vm: TripViewModel) -> ServiceContainer {
-        // The container is passed via environment; this is a placeholder.
-        // In real usage NavigationLink destination gets it from @EnvironmentObject.
-        fatalError("Use @EnvironmentObject ServiceContainer instead")
     }
 }
 

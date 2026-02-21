@@ -5,7 +5,7 @@ struct ReportsView: View {
 
     @StateObject private var viewModel: ReportsViewModel
     @State private var showShareSheet = false
-    @State private var csvToShare: String?
+    @State private var csvToShare: IdentifiableString?
 
     init(container: ServiceContainer) {
         _viewModel = StateObject(wrappedValue: ReportsViewModel(container: container))
@@ -33,10 +33,10 @@ struct ReportsView: View {
                 }
             }
             .onChange(of: viewModel.csvOutput) { csv in
-                if let csv { csvToShare = csv }
+                if let csv { csvToShare = IdentifiableString(value: csv) }
             }
-            .sheet(item: $csvToShare) { csv in
-                ShareSheet(items: [csv])
+            .sheet(item: $csvToShare) { wrapper in
+                ShareSheet(items: [wrapper.value])
             }
         }
     }
@@ -197,7 +197,8 @@ struct ShareSheet: UIViewControllerRepresentable {
     func updateUIViewController(_ vc: UIActivityViewController, context: Context) {}
 }
 
-// MARK: - String Identifiable helper for sheets
-extension String: @retroactive Identifiable {
-    public var id: String { self }
+// MARK: - Identifiable string wrapper for sheets
+struct IdentifiableString: Identifiable {
+    let id = UUID()
+    let value: String
 }

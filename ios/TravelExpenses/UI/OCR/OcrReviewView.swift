@@ -6,16 +6,16 @@ struct OcrReviewView: View {
 
     let imagePath: String
     let tripId: String
-    @EnvironmentObject private var container: ServiceContainer
+    let container: ServiceContainer
 
     @StateObject private var ocrViewModel: OcrViewModel
     @State private var navigateToExpenseEntry = false
 
-    init(imagePath: String, tripId: String) {
+    init(imagePath: String, tripId: String, container: ServiceContainer) {
         self.imagePath = imagePath
         self.tripId = tripId
-        // OcrViewModel is created with a placeholder; container injected via environment
-        _ocrViewModel = StateObject(wrappedValue: OcrViewModel(container: ServiceContainer()))
+        self.container = container
+        _ocrViewModel = StateObject(wrappedValue: OcrViewModel(container: container))
     }
 
     var body: some View {

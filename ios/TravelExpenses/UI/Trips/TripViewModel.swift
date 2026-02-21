@@ -32,6 +32,11 @@ final class TripViewModel: ObservableObject {
         observeTrips()
     }
 
+    deinit {
+        tripBridge?.cancel()
+        expenseBridge?.cancel()
+    }
+
     // MARK: - Flow observation
 
     private func observeTrips() {

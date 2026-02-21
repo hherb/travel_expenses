@@ -44,6 +44,10 @@ final class ReportsViewModel: ObservableObject {
         observeTrips()
     }
 
+    deinit {
+        tripBridge?.cancel()
+    }
+
     func selectTrip(_ tripId: String) {
         selectedTripId = tripId
         Task { await loadReport(tripId: tripId) }
@@ -103,17 +107,23 @@ final class ReportsViewModel: ObservableObject {
                 byCategory[expense.categoryId, default: []].append(expense)
             }
 
-            let breakdown: [CategoryBreakdown] = byCategory.map { catId, catExpenses in
-                let catTotal = catExpenses.compactMap { Double($0.amount) }.reduce(0, +)
+            var breakdownList: [CategoryBreakdown] = []
+            for (catId, catExpenses) in byCategory {
+                let catResult = try await currencyConverter.aggregateTripTotal(
+                    expenses: catExpenses,
+                    baseCurrency: trip.baseCurrency
+                )
+                let catTotal = Double(catResult.total) ?? 0
                 let pct = grandTotal > 0 ? Float(catTotal / grandTotal * 100) : 0
-                return CategoryBreakdown(
+                breakdownList.append(CategoryBreakdown(
                     id: catId,
                     categoryName: catNameMap[catId] ?? catId,
                     total: String(format: "%.2f", catTotal),
                     count: catExpenses.count,
                     percentage: pct
-                )
-            }.sorted { ($0.total as NSString).doubleValue > ($1.total as NSString).doubleValue }
+                ))
+            }
+            let breakdown = breakdownList.sorted { ($0.total as NSString).doubleValue > ($1.total as NSString).doubleValue }
 
             // Daily average
             let days: Int

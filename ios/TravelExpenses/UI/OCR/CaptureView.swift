@@ -6,7 +6,7 @@ import PhotosUI
 struct CaptureView: View {
 
     let tripId: String
-    @EnvironmentObject private var container: ServiceContainer
+    let container: ServiceContainer
 
     @Environment(\.dismiss) private var dismiss
 
@@ -71,7 +71,7 @@ struct CaptureView: View {
             .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(isPresented: $navigateToReview) {
                 if let path = capturedImagePath {
-                    OcrReviewView(imagePath: path, tripId: tripId)
+                    OcrReviewView(imagePath: path, tripId: tripId, container: container)
                 }
             }
         }
