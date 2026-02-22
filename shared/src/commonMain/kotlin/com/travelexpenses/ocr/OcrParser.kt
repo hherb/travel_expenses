@@ -108,8 +108,12 @@ class OcrParser(
     private val isoDatePattern = Regex("""(20\d{2})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])""")
     // US: 01/15/2024 or 1/15/2024
     private val usDatePattern = Regex("""(0?[1-9]|1[0-2])/(0?[1-9]|[12]\d|3[01])/(20\d{2})""")
+    // US short: 01/15/24 (2-digit year)
+    private val usDateShortPattern = Regex("""(0?[1-9]|1[0-2])/(0?[1-9]|[12]\d|3[01])/(\d{2})\b""")
     // EU: 15/01/2024 or 15.01.2024 or 15-01-2024
     private val euDatePattern = Regex("""(0?[1-9]|[12]\d|3[01])[./\-](0?[1-9]|1[0-2])[./\-](20\d{2})""")
+    // EU short: 15/01/24 or 15.01.24 or 15-01-24 (2-digit year)
+    private val euDateShortPattern = Regex("""(0?[1-9]|[12]\d|3[01])[./\-](0?[1-9]|1[0-2])[./\-](\d{2})\b""")
     // Written: Jan 15, 2024 or January 15, 2024 or 15 Jan 2024
     private val writtenDatePattern1 = Regex(
         """(?i)(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+(0?[1-9]|[12]\d|3[01]),?\s*(20\d{2})"""
@@ -161,6 +165,24 @@ class OcrParser(
             return "$year-$month-$day" to confidence
         }
 
+        // US short: MM/DD/YY (2-digit year, assume 20xx)
+        usDateShortPattern.find(fullText)?.let { match ->
+            val month = match.groupValues[1].padStart(2, '0')
+            val day = match.groupValues[2].padStart(2, '0')
+            val year = "20${match.groupValues[3]}"
+            return "$year-$month-$day" to 0.6f
+        }
+
+        // EU short: DD/MM/YY or DD.MM.YY (2-digit year, assume 20xx)
+        euDateShortPattern.find(fullText)?.let { match ->
+            val day = match.groupValues[1].padStart(2, '0')
+            val month = match.groupValues[2].padStart(2, '0')
+            val year = "20${match.groupValues[3]}"
+            val separator = match.value.firstOrNull { it == '.' || it == '-' || it == '/' }
+            val confidence = if (day.toInt() > 12 || separator == '.' || separator == '-') 0.55f else 0.4f
+            return "$year-$month-$day" to confidence
+        }
+
         return null to 0f
     }
 
@@ -194,8 +216,9 @@ class OcrParser(
     )
 
     internal fun extractVendor(lines: List<String>): Pair<String?, Confidence> {
-        // Heuristic: vendor name is typically in the first few non-trivial lines
-        val candidates = lines.take(5)
+        // Heuristic: vendor name is typically in the first few non-trivial lines.
+        // Use 8 lines to handle receipts with logos, "RECEIPT" headers, or address blocks at the top.
+        val candidates = lines.take(8)
         for (line in candidates) {
             val cleaned = line.trim()
             if (cleaned.length < 2) continue

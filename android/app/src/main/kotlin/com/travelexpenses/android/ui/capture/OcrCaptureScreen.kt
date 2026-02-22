@@ -33,7 +33,7 @@ fun OcrCaptureScreen(
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture(),
     ) { success ->
-        if (success && photoUri != null) {
+        if (success) {
             val file = File(context.cacheDir, "receipt_temp.jpg")
             onImageCaptured(file.absolutePath)
         }
