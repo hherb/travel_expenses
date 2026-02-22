@@ -16,6 +16,7 @@ struct ExpenseEntryView: View {
     var ocrDate: Kotlinx_datetimeLocalDate?
     var ocrTaxAmount: String?
     var ocrConfidence: Float?
+    var receiptImagePath: String?
 
     @State private var showTagPicker = false
     @State private var newTagLabel = ""
@@ -31,7 +32,8 @@ struct ExpenseEntryView: View {
         ocrVendor: String? = nil,
         ocrDate: Kotlinx_datetimeLocalDate? = nil,
         ocrTaxAmount: String? = nil,
-        ocrConfidence: Float? = nil
+        ocrConfidence: Float? = nil,
+        receiptImagePath: String? = nil
     ) {
         _viewModel = StateObject(
             wrappedValue: ExpenseViewModel(
@@ -46,6 +48,7 @@ struct ExpenseEntryView: View {
         self.ocrDate = ocrDate
         self.ocrTaxAmount = ocrTaxAmount
         self.ocrConfidence = ocrConfidence
+        self.receiptImagePath = receiptImagePath
     }
 
     var body: some View {
@@ -88,6 +91,9 @@ struct ExpenseEntryView: View {
                     taxAmount: ocrTaxAmount,
                     confidence: ocrConfidence
                 )
+            }
+            if let path = receiptImagePath {
+                viewModel.formState.receiptImagePath = path
             }
         }
         .sheet(isPresented: $showTagPicker) {

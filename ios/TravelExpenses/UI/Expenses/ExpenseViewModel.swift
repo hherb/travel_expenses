@@ -13,6 +13,7 @@ struct ExpenseFormState {
     var tripId: String = ""
     var selectedTagIds: [String] = []
     var ocrConfidence: Float? = nil
+    var receiptImagePath: String? = nil
 }
 
 @MainActor
@@ -154,6 +155,13 @@ final class ExpenseViewModel: ObservableObject {
                     )
                 }
                 try await eventLogRepo.append(event: event)
+
+                // Attach receipt image if one was captured
+                if let tempPath = form.receiptImagePath {
+                    let expenseId = editingExpenseId ?? expense.id
+                    await attachReceiptImage(tempPath: tempPath, expenseId: expenseId)
+                }
+
                 saveComplete = true
             } catch {
                 errorMessage = error.localizedDescription
@@ -188,6 +196,54 @@ final class ExpenseViewModel: ObservableObject {
             formState.selectedTagIds.removeAll { $0 == tagId }
         } else {
             formState.selectedTagIds.append(tagId)
+        }
+    }
+
+    // MARK: - Receipt Image
+
+    private func attachReceiptImage(tempPath: String, expenseId: String) async {
+        let fileManager = FileManager.default
+        let imageId = UUID().uuidString
+
+        // Copy from temp to permanent app storage
+        guard let docDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            print("[ExpenseViewModel] Could not locate documents directory")
+            return
+        }
+        let receiptsDir = docDir.appendingPathComponent("receipts", isDirectory: true)
+        if !fileManager.fileExists(atPath: receiptsDir.path) {
+            try? fileManager.createDirectory(at: receiptsDir, withIntermediateDirectories: true)
+        }
+        let permanentURL = receiptsDir.appendingPathComponent("\(imageId).jpg")
+        do {
+            try fileManager.copyItem(
+                at: URL(fileURLWithPath: tempPath),
+                to: permanentURL
+            )
+        } catch {
+            print("[ExpenseViewModel] Failed to copy receipt image: \(error)")
+            return
+        }
+
+        // Emit ReceiptAttached event
+        do {
+            let seqNum = (try await eventLogRepo.count()).int64Value + 1
+            let now = DateTimeHelpers.shared.now()
+            let event = ExpenseEvent.ReceiptAttached(
+                eventId: UUID().uuidString,
+                timestamp: now,
+                sequenceNumber: seqNum,
+                deviceId: deviceId,
+                expenseId: expenseId,
+                imageId: imageId,
+                filePath: permanentURL.path,
+                thumbnailPath: nil,
+                width: nil,
+                height: nil
+            )
+            try await eventLogRepo.append(event: event)
+        } catch {
+            print("[ExpenseViewModel] Failed to append ReceiptAttached event: \(error)")
         }
     }
 

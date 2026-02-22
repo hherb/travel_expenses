@@ -43,7 +43,8 @@ struct OcrReviewView: View {
                 ocrVendor: ocrViewModel.vendor,
                 ocrDate: Self.parseDate(ocrViewModel.date.isEmpty ? nil : ocrViewModel.date),
                 ocrTaxAmount: ocrViewModel.taxAmount.isEmpty ? nil : ocrViewModel.taxAmount,
-                ocrConfidence: ocrViewModel.confidence
+                ocrConfidence: ocrViewModel.confidence,
+                receiptImagePath: imagePath
             )
         }
     }
