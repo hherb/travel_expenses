@@ -73,10 +73,10 @@
 		AB000021 /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
 		AB000022 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		AB000030 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		AB000031 /* Shared.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = Shared.xcframework; path = "../shared/build/XCFrameworks/release/Shared.xcframework"; sourceTree = "<group>"; };
+		AB000031 /* Shared.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = Shared.xcframework; path = ../shared/build/XCFrameworks/release/Shared.xcframework; sourceTree = "<group>"; };
+		AB000032 /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
 		AB000040 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AB000050 /* TravelExpenses.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TravelExpenses.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		AB000032 /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -92,7 +92,7 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		AE000001 /* root */ = {
+		AE000001 = {
 			isa = PBXGroup;
 			children = (
 				AE000002 /* TravelExpenses */,
@@ -183,6 +183,15 @@
 			path = Expenses;
 			sourceTree = "<group>";
 		};
+		AE000010 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				AB000031 /* Shared.xcframework */,
+				AB000032 /* libsqlite3.tbd */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		AE000011 /* OCR */ = {
 			isa = PBXGroup;
 			children = (
@@ -210,15 +219,6 @@
 				AB000022 /* SettingsView.swift */,
 			);
 			path = Settings;
-			sourceTree = "<group>";
-		};
-		AE000010 /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				AB000031 /* Shared.xcframework */,
-				AB000032 /* libsqlite3.tbd */,
-			);
-			name = Frameworks;
 			sourceTree = "<group>";
 		};
 		AE000020 /* Products */ = {
@@ -451,6 +451,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
+				DEVELOPMENT_TEAM = X5DWXB4283;
 				ENABLE_PREVIEWS = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -480,6 +481,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
+				DEVELOPMENT_TEAM = X5DWXB4283;
 				ENABLE_PREVIEWS = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -523,7 +525,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
 	};
 	rootObject = AF000000 /* Project object */;
 }
