@@ -41,7 +41,7 @@ struct OcrReviewView: View {
                 ocrAmount: ocrViewModel.amount,
                 ocrCurrency: ocrViewModel.currency.isEmpty ? "USD" : ocrViewModel.currency,
                 ocrVendor: ocrViewModel.vendor,
-                ocrDate: Self.parseDate(ocrViewModel.date),
+                ocrDate: Self.parseDate(ocrViewModel.date.isEmpty ? nil : ocrViewModel.date),
                 ocrTaxAmount: ocrViewModel.taxAmount.isEmpty ? nil : ocrViewModel.taxAmount,
                 ocrConfidence: ocrViewModel.confidence
             )
@@ -105,6 +105,15 @@ struct OcrReviewView: View {
                         .textInputAutocapitalization(.characters)
                         .multilineTextAlignment(.trailing)
                         .frame(width: 60)
+                }
+
+                HStack {
+                    Text("Date")
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    TextField("YYYY-MM-DD", text: $ocrViewModel.date)
+                        .multilineTextAlignment(.trailing)
+                        .keyboardType(.numbersAndPunctuation)
                 }
 
                 if !ocrViewModel.taxAmount.isEmpty {
