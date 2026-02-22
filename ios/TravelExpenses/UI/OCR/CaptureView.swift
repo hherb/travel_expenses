@@ -79,7 +79,12 @@ struct CaptureView: View {
             CameraView { imagePath in
                 capturedImagePath = imagePath
                 showCamera = false
-                navigateToReview = true
+                // Delay navigation until the fullScreenCover dismiss animation completes.
+                // Setting navigateToReview = true in the same cycle as showCamera = false
+                // causes SwiftUI to silently drop the navigation push.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    navigateToReview = true
+                }
             }
         }
     }

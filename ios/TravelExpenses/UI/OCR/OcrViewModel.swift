@@ -10,7 +10,7 @@ final class OcrViewModel: ObservableObject {
     @Published var vendor: String = ""
     @Published var amount: String = ""
     @Published var currency: String = ""
-    @Published var date: String?
+    @Published var date: String = ""
     @Published var taxAmount: String = ""
     @Published var confidence: Float? = nil
     @Published var errorMessage: String?
@@ -45,7 +45,7 @@ final class OcrViewModel: ObservableObject {
                 amount     = result.total  ?? ""
                 currency   = result.currency ?? ""
                 taxAmount  = result.tax    ?? ""
-                date       = result.date
+                date       = result.date ?? ""
                 confidence = result.totalConfidence
 
                 processingComplete = true
