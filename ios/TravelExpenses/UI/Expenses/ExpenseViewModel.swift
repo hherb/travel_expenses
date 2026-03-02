@@ -158,8 +158,12 @@ final class ExpenseViewModel: ObservableObject {
 
                 // Attach receipt image if one was captured
                 if let tempPath = form.receiptImagePath {
+                    let exists = FileManager.default.fileExists(atPath: tempPath)
+                    print("[ExpenseViewModel] save: receiptImagePath=\(tempPath), exists=\(exists)")
                     let expenseId = editingExpenseId ?? expense.id
                     await attachReceiptImage(tempPath: tempPath, expenseId: expenseId)
+                } else {
+                    print("[ExpenseViewModel] save: receiptImagePath is nil")
                 }
 
                 saveComplete = true
@@ -224,6 +228,8 @@ final class ExpenseViewModel: ObservableObject {
             print("[ExpenseViewModel] Failed to copy receipt image: \(error)")
             return
         }
+        let copied = fileManager.fileExists(atPath: permanentURL.path)
+        print("[ExpenseViewModel] Copied receipt to \(permanentURL.path), exists=\(copied)")
 
         // Emit ReceiptAttached event
         do {
@@ -242,6 +248,7 @@ final class ExpenseViewModel: ObservableObject {
                 height: nil
             )
             try await eventLogRepo.append(event: event)
+            print("[ExpenseViewModel] ReceiptAttached event appended for expense=\(expenseId), image=\(imageId)")
         } catch {
             print("[ExpenseViewModel] Failed to append ReceiptAttached event: \(error)")
         }

@@ -76,16 +76,21 @@ struct CaptureView: View {
             }
         }
         .fullScreenCover(isPresented: $showCamera) {
-            CameraView { imagePath in
-                capturedImagePath = imagePath
-                showCamera = false
-                // Delay navigation until the fullScreenCover dismiss animation completes.
-                // Setting navigateToReview = true in the same cycle as showCamera = false
-                // causes SwiftUI to silently drop the navigation push.
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    navigateToReview = true
+            CameraView(
+                onCapture: { imagePath in
+                    print("[CaptureView] onCapture received path=\(imagePath)")
+                    capturedImagePath = imagePath
+                    showCamera = false
+                    // Delay navigation until the fullScreenCover dismiss animation completes.
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        print("[CaptureView] Navigating to review, capturedImagePath=\(capturedImagePath ?? "nil")")
+                        navigateToReview = true
+                    }
+                },
+                onCancel: {
+                    showCamera = false
                 }
-            }
+            )
         }
     }
 
@@ -107,12 +112,15 @@ struct CaptureView: View {
 import UIKit
 
 /// UIViewControllerRepresentable that wraps UIImagePickerController for camera capture.
+/// Dismissal is managed by SwiftUI via the `isPresented` binding on fullScreenCover —
+/// the coordinator must NOT call picker.dismiss() to avoid cascading dismiss of parent sheets.
 struct CameraView: UIViewControllerRepresentable {
 
     let onCapture: (String) -> Void
+    let onCancel: () -> Void
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(onCapture: onCapture)
+        Coordinator(onCapture: onCapture, onCancel: onCancel)
     }
 
     func makeUIViewController(context: Context) -> UIImagePickerController {
@@ -126,24 +134,33 @@ struct CameraView: UIViewControllerRepresentable {
 
     final class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
         let onCapture: (String) -> Void
-        init(onCapture: @escaping (String) -> Void) { self.onCapture = onCapture }
+        let onCancel: () -> Void
+        init(onCapture: @escaping (String) -> Void, onCancel: @escaping () -> Void) {
+            self.onCapture = onCapture
+            self.onCancel = onCancel
+        }
 
         func imagePickerController(
             _ picker: UIImagePickerController,
             didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
         ) {
-            picker.dismiss(animated: true)
             guard let image = info[.originalImage] as? UIImage else { return }
             let url = FileManager.default.temporaryDirectory
                 .appendingPathComponent("receipt_\(UUID().uuidString).jpg")
             if let data = image.jpegData(compressionQuality: 0.9) {
-                try? data.write(to: url)
-                onCapture(url.path)
+                do {
+                    try data.write(to: url)
+                    let exists = FileManager.default.fileExists(atPath: url.path)
+                    print("[CaptureView] Wrote \(data.count) bytes to \(url.path), exists=\(exists)")
+                    onCapture(url.path)
+                } catch {
+                    print("[CaptureView] Failed to write image: \(error)")
+                }
             }
         }
 
         func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            picker.dismiss(animated: true)
+            onCancel()
         }
     }
 }

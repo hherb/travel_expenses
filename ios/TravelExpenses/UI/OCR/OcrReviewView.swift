@@ -31,6 +31,7 @@ struct OcrReviewView: View {
         .navigationTitle("Review Receipt")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
+            print("[OcrReviewView] onAppear, imagePath=\(imagePath)")
             ocrViewModel.processImage(at: imagePath)
         }
         .navigationDestination(isPresented: $navigateToExpenseEntry) {

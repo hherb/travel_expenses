@@ -93,7 +93,11 @@ struct ExpenseEntryView: View {
                 )
             }
             if let path = receiptImagePath {
+                let exists = FileManager.default.fileExists(atPath: path)
+                print("[ExpenseEntryView] receiptImagePath=\(path), exists=\(exists)")
                 viewModel.formState.receiptImagePath = path
+            } else {
+                print("[ExpenseEntryView] receiptImagePath is nil")
             }
         }
         .sheet(isPresented: $showTagPicker) {
